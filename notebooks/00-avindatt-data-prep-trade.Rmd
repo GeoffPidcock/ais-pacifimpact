@@ -2,7 +2,8 @@
 title: "Data Prep - Pacific Islands Trade"
 author: "Avin Datt - PacifImpact"
 date: "03 September 2020"
-output: github_document
+output: 
+  github_document
 ---
 
 # Scope  
