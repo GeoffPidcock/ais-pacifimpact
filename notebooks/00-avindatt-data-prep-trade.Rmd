@@ -1,0 +1,39 @@
+---
+title: "Data Prep - Pacific Islands Trade"
+author: "Avin Datt - PacifImpact"
+date: "03 September 2020"
+output: 
+  github_document
+---
+
+# Scope  
+
+Ingest IMTS Data into PostgreSQL database. 
+
+# Reference
+
+IMTS data is available in .xlsx format. It can be downloaded from [SPC Statistics for Development Division](https://sdd.spc.int/contact-us#disclaimer)
+
+# Load Libraries 
+
+```{r}
+#### Load Libraries ####
+# Load openxlsx library 
+if (!require(openxlsx)) {
+  install.packages("openxlsx")
+  library(openxlsx)
+}
+
+# Load purrr library
+if (!require(purrr)) {
+  install.packages("purrr")
+  library(purrr)
+}
+
+# Load data.table library
+if (!require(data.table)) {
+  install.packages("data.table")
+  library(data.table)
+}
+```
+
