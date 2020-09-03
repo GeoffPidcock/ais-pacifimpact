@@ -87,4 +87,7 @@ target/
 
 # Mypy cache
 .mypy_cache/
+
+# R related
 .Rproj.user
+.Rmd
