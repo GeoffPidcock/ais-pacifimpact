@@ -402,3 +402,167 @@ ck.imts.bot <- ck.imts.bot[,
                              properties)]
 ```
 
+
+# Load Solomon Islands Data 
+
+Read in Balance of Trade - All Items for Cook Islands.
+
+```{r}
+# Read in Fiji File 
+sl.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/external/Solomon_Islands_IMTS_Tables_2020.xlsx',
+                         sheet = 1, 
+                         startRow = 25,
+                         skipEmptyCols = TRUE,
+                         detectDates = TRUE,
+                         rows = c(25:41),
+                         cols = c(1:7))
+
+
+# Remove rows with no month value 
+
+```
+
+Add and fix missing variable names. 
+
+```{r}
+# sl.imts.bot to data.table 
+sl.imts.bot <- data.table(sl.imts.bot)
+
+
+# Fix Monthly label to Year
+setnames(sl.imts.bot, 
+         "Monthly",
+         "year")
+
+
+# X2 should be Month 
+setnames(sl.imts.bot, 
+         "X2",
+         "month")
+
+
+# Exports FOB Domestic 
+setnames(sl.imts.bot, 
+         "X3",
+         "exports-fob-domestic")
+
+
+# Exports FOB Re-Export 
+setnames(sl.imts.bot, 
+         "X4",
+         "exports-fob-reexport")
+
+
+# Exports FOB Total 
+setnames(sl.imts.bot, 
+         "X5",
+         "exports-fob-total")
+
+
+# Imports CIF
+setnames(sl.imts.bot, 
+         "X6",
+         "imports-cif")
+
+
+
+# Trade Balance
+setnames(sl.imts.bot, 
+         "X7",
+         "trade-balance")
+
+
+```
+
+Update Year values.
+
+```{r}
+# Update by using row number references
+# 2018
+sl.imts.bot[1:12, 
+            year := 2018]
+
+
+# 2019
+sl.imts.bot[13:15, 
+            year := 2019]
+
+
+```
+
+Melt the table to adhere to the key-value pair schema design. 
+
+```{r}
+# Melt the data to adhere to the schema design
+sl.imts.bot <- melt.data.table(sl.imts.bot,
+                               id = c("year",
+                                      "month"), measure = c("exports-fob-domestic",
+                                                            "exports-fob-reexport", 
+                                                            "exports-fob-total",
+                                                            "imports-cif",
+                                                            "trade-balance"))
+```
+
+Create Date from year and month. 
+
+```{r}
+# Concatenate
+sl.imts.bot[, 
+            date := paste0(gsub(" ", "", year, fixed = TRUE),
+                           "-",
+                           gsub(" ", "",month, fixed = TRUE),
+                           "-",
+                           "01")]
+
+
+# Format Date
+sl.imts.bot[, 
+            date := as.Date(date, format = "%Y-%B-%d")]
+
+
+# Remove year and month fields 
+sl.imts.bot[, 
+            year := NULL][, 
+                          month := NULL]
+```
+
+Rename "variable" to "name". 
+
+```{r}
+# Rename variable to name 
+setnames(sl.imts.bot, 
+         "variable",
+         "name")
+
+```
+
+Add metric key, frequency, country, category, source and property informations. 
+
+```{r}
+# Metric 
+sl.imts.bot[, 
+            `:=` (frequency = "monthly", 
+                  country = "sl", 
+                  category = "trade", 
+                  source = "imts", 
+                  properties = "{currency = sbd}",
+                  metric_key = paste0("sl","-",name,"-",date))]
+
+```
+
+Reorder data. 
+
+```{r}
+# Change order of columns to align with schema
+sl.imts.bot <- sl.imts.bot[,
+                           .(metric_key,
+                             frequency, 
+                             country,
+                             category, 
+                             source,
+                             name,
+                             date, 
+                             value,
+                             properties)]
+```
+
