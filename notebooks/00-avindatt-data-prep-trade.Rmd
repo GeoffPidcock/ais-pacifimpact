@@ -34,6 +34,19 @@ if (!require(data.table)) {
   install.packages("data.table")
   library(data.table)
 }
+
+# Load DBI library
+if (!require(DBI)) {
+  install.packages("DBI")
+  library(DBI)
+}
+
+# Load DBI library
+if (!require(RPostgres)) {
+  install.packages("RPostgres")
+  library(RPostgres)
+}
+
 ```
 
 # Load Fiji Data 
@@ -564,5 +577,17 @@ sl.imts.bot <- sl.imts.bot[,
                              date, 
                              value,
                              properties)]
+```
+
+
+# Append to Database 
+```{r}
+library(DBI)
+# Connect to a specific postgres database i.e. Heroku
+db.con <- dbConnect(RPostgres::Postgres(),dbname = 'aishackathon', 
+                 host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', # i.e. 'ec2-54-83-201-96.compute-1.amazonaws.com'
+                 port = 5432, # or any other port specified by your DBA
+                 user = rstudioapi::askForPassword("Database user"),
+                 password = rstudioapi::askForPassword("Database password"))
 ```
 
