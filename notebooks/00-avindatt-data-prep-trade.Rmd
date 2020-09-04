@@ -729,3 +729,23 @@ dbDisconnect(db.con)
 ```
 
 
+# country_metrics
+
+```{r}
+# Connect to a specific postgres database i.e. Heroku
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = rstudioapi::askForPassword("Database user"),
+                    password = rstudioapi::askForPassword("Database password"))
+
+# See what tables are available 
+dbListTables(db.con)
+
+
+# Count rows before upload
+country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM country_metrics"))
+
+```
+
