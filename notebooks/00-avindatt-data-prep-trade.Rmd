@@ -638,9 +638,43 @@ The process followed:
 3. Save as .csv to be uploaded to PostgreSQL Database. 
 
 ```{r}
+# Read in Samoa File 
+ws.imts.bot <- fread('C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/interim/Samoa IMTS.csv')
 
+
+head(ws.imts.bot)
 ```
 
+Manipulate to fit required data schema. Add appropriate attributes and reorder the dataset to match the required schema. 
+
+```{r}
+# Keep only date, source, name, value, frequency
+ws.imts.bot[, 
+            `:=` (V1 = NULL,
+                  country = NULL,
+                  currency = NULL)]
+
+# Metric 
+ws.imts.bot[, 
+            `:=` (country = "ws", 
+                  properties = "{'currency' = 'wst 000'}",
+                  metric_key = paste0("ws","-",name,"-",date))]
+
+
+# Change order of columns to align with schema
+ws.imts.bot <- ws.imts.bot[,
+                           .(metric_key,
+                             frequency, 
+                             country,
+                             category, 
+                             source,
+                             name,
+                             date, 
+                             value,
+                             properties)]
+
+head(ws.imts.bot)
+```
 
 # Read Vanuatu National Statistics Trade Data
 
@@ -654,7 +688,7 @@ The process followed:
 
 ```{r}
 # Read in Vanuatu File 
-vn.imts.bot <- fread('C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/external/Vanuatu IMTS cleaned.csv')
+vn.imts.bot <- fread('C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/interim/Vanuatu IMTS cleaned.csv')
 
 
 head(vn.imts.bot)
@@ -914,6 +948,45 @@ count_recs8 <- dbFetch(rs8)
 dbDisconnect(db.con)
 ```
 
+## Samoa IMTS SBS Balance of Trade Upload 
+
+```{r}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+rc9 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs9 <- dbFetch(rc9)
+#1140
+
+
+# # Append ws.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics",
+#                         ws.imts.bot,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs10 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs10 <- dbFetch(rs10)
+#1488
+
+
+dbDisconnect(db.con)
+
+```
 
 
 ## Clean up 
@@ -927,7 +1000,11 @@ rm(count_recs1,
    count_recs3,
    count_recs4,
    count_recs5,
-   count_recs6, 
+   count_recs6,
+   count_recs7, 
+   count_recs8,
+   count_recs9,
+   count_recs10,
    rc1,
    rs2, 
    rc3,
@@ -935,7 +1012,9 @@ rm(count_recs1,
    rc5,
    rs6,
    rc7,
-   rs8)
+   rs8,
+   rc9,
+   rs10)
 ```
 
 # Final Result: country_metrics
