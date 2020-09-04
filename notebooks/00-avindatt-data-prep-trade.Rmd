@@ -23,12 +23,6 @@ if (!require(openxlsx)) {
   library(openxlsx)
 }
 
-# Load purrr library
-if (!require(purrr)) {
-  install.packages("purrr")
-  library(purrr)
-}
-
 # Load data.table library
 if (!require(data.table)) {
   install.packages("data.table")
@@ -63,7 +57,7 @@ fj.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/
                          rows = c(28:111),
                          cols = c(1:7))
 
-
+fj.imts.bot
 ```
 
 Add and fix missing variable names. 
@@ -116,6 +110,7 @@ setnames(fj.imts.bot,
          "trade-balance")
 
 
+fj.imts.bot
 ```
 
 Update Year values.
@@ -157,6 +152,7 @@ fj.imts.bot[73:77,
             year := 2020]
 
 
+fj.imts.bot
 ```
 
 Melt the table to adhere to the key-value pair schema design. 
@@ -170,6 +166,9 @@ fj.imts.bot <- melt.data.table(fj.imts.bot,
                                                             "exports-fob-total",
                                                             "imports-cif",
                                                             "trade-balance"))
+
+
+fj.imts.bot
 ```
 
 Create Date from year and month. 
@@ -193,6 +192,9 @@ fj.imts.bot[,
 fj.imts.bot[, 
             year := NULL][, 
                           month := NULL]
+
+
+fj.imts.bot
 ```
 
 Rename "variable" to "name". 
@@ -203,6 +205,8 @@ setnames(fj.imts.bot,
          "variable",
          "name")
 
+
+fj.imts.bot
 ```
 
 Add metric key, frequency, country, category, source and property informations. 
@@ -214,9 +218,11 @@ fj.imts.bot[,
                   country = "fj", 
                   category = "trade", 
                   source = "imts", 
-                  properties = "{'currency' = 'fjd'}",
+                  properties = "{'currency' = 'fjd 000'}",
                   metric_key = paste0("fj","-",name,"-",date))]
 
+
+fj.imts.bot
 ```
 
 Reorder data. 
@@ -233,6 +239,9 @@ fj.imts.bot <- fj.imts.bot[,
                              date, 
                              value,
                              properties)]
+
+
+fj.imts.bot
 ```
 
 # Read Cook Islands Data 
@@ -250,8 +259,7 @@ ck.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/
                          cols = c(1:7))
 
 
-# Remove rows with no month value 
-
+ck.imts.bot
 ```
 
 Add and fix missing variable names. 
@@ -304,12 +312,17 @@ setnames(ck.imts.bot,
          "trade-balance")
 
 
+ck.imts.bot
 ```
 
 Remove rogue empty row. 
 
 ```{r}
+# Remove rows with no month value 
 ck.imts.bot <- ck.imts.bot[!is.na(month)]
+
+
+ck.imts.bot
 ```
 
 
@@ -337,6 +350,7 @@ ck.imts.bot[37:40,
             year := 2020]
 
 
+ck.imts.bot
 ```
 
 Melt the table to adhere to the key-value pair schema design. 
@@ -350,6 +364,8 @@ ck.imts.bot <- melt.data.table(ck.imts.bot,
                                                             "exports-fob-total",
                                                             "imports-cif",
                                                             "trade-balance"))
+
+ck.imts.bot
 ```
 
 Create Date from year and month. 
@@ -373,6 +389,9 @@ ck.imts.bot[,
 ck.imts.bot[, 
             year := NULL][, 
                           month := NULL]
+
+
+ck.imts.bot
 ```
 
 Rename "variable" to "name". 
@@ -383,6 +402,8 @@ setnames(ck.imts.bot,
          "variable",
          "name")
 
+
+ck.imts.bot
 ```
 
 Add metric key, frequency, country, category, source and property informations. 
@@ -394,9 +415,11 @@ ck.imts.bot[,
                   country = "ck", 
                   category = "trade", 
                   source = "imts", 
-                  properties = "{'currency' = 'nzd'}",
+                  properties = "{'currency' = 'nzd 000'}",
                   metric_key = paste0("ck","-",name,"-",date))]
 
+
+ck.imts.bot
 ```
 
 Reorder data. 
@@ -413,6 +436,8 @@ ck.imts.bot <- ck.imts.bot[,
                              date, 
                              value,
                              properties)]
+
+ck.imts.bot
 ```
 
 
@@ -431,8 +456,8 @@ sl.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/
                          cols = c(1:7))
 
 
-# Remove rows with no month value 
 
+sl.imts.bot
 ```
 
 Add and fix missing variable names. 
@@ -484,7 +509,7 @@ setnames(sl.imts.bot,
          "X7",
          "trade-balance")
 
-
+sl.imts.bot
 ```
 
 Update Year values.
@@ -501,6 +526,7 @@ sl.imts.bot[13:15,
             year := 2019]
 
 
+sl.imts.bot
 ```
 
 Melt the table to adhere to the key-value pair schema design. 
@@ -514,6 +540,8 @@ sl.imts.bot <- melt.data.table(sl.imts.bot,
                                                             "exports-fob-total",
                                                             "imports-cif",
                                                             "trade-balance"))
+
+sl.imts.bot
 ```
 
 Create Date from year and month. 
@@ -537,6 +565,9 @@ sl.imts.bot[,
 sl.imts.bot[, 
             year := NULL][, 
                           month := NULL]
+
+
+sl.imts.bot
 ```
 
 Rename "variable" to "name". 
@@ -547,6 +578,8 @@ setnames(sl.imts.bot,
          "variable",
          "name")
 
+
+sl.imts.bot
 ```
 
 Add metric key, frequency, country, category, source and property informations. 
@@ -555,12 +588,14 @@ Add metric key, frequency, country, category, source and property informations.
 # Metric 
 sl.imts.bot[, 
             `:=` (frequency = "monthly", 
-                  country = "sl", 
+                  country = "sb", 
                   category = "trade", 
                   source = "imts", 
-                  properties = "{'currency' = 'sbd'}",
-                  metric_key = paste0("sl","-",name,"-",date))]
+                  properties = "{'currency' = 'sbd 000'}",
+                  metric_key = paste0("sb","-",name,"-",date))]
 
+
+sl.imts.bot
 ```
 
 Reorder data. 
@@ -577,6 +612,9 @@ sl.imts.bot <- sl.imts.bot[,
                              date, 
                              value,
                              properties)]
+
+
+sl.imts.bot
 ```
 
 
@@ -588,23 +626,20 @@ Table used is country_metrics.
 
 ## Fiji IMTS Balance of Trade Upload
 
-Prior to upload, the country_metrics table had 429 existing records. 
+Prior to upload, the country_metrics table had 480 existing records. 
 
-After the upload, the same table has 814 records. 
+After the upload, the same table has 865 records. 
 
 The difference equates to the 385 row count of the Fiji IMTS dataset. This means data was successfully uploaded. 
 
 ```{r}
-# Connect to a specific postgres database i.e. Heroku
+# Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
                     host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
                     port = 5432, 
-                    user = rstudioapi::askForPassword("Database user"),
-                    password = rstudioapi::askForPassword("Database password"))
-
-# See what tables are available 
-dbListTables(db.con)
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
 
 
 # Count rows before upload
@@ -612,12 +647,12 @@ rc1 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs1 <- dbFetch(rc1)
-#429
+#480
 
 
 # # Append fj.imts.bot to country_metrics
 # RPostgres::dbWriteTable(db.con,
-#                         "country_metrics", 
+#                         "country_metrics",
 #                         fj.imts.bot,
 #                         append = TRUE,
 #                         row.names = FALSE)
@@ -628,7 +663,7 @@ rs2 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs2 <- dbFetch(rs2)
-#814
+#865
 
 
 dbDisconnect(db.con)
@@ -636,23 +671,20 @@ dbDisconnect(db.con)
 
 ## Solomon Islands IMTS Balance of Trade Upload
 
-Prior to upload, the country_metrics table had 814 existing records. 
+Prior to upload, the country_metrics table had 865 existing records. 
 
-After the upload, the same table has 889 records. 
+After the upload, the same table has 940 records. 
 
 The difference equates to the 75 row count of the Solomon Islands IMTS dataset. This means data was successfully uploaded. 
 
 ```{r}
-# Connect to a specific postgres database i.e. Heroku
+# Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
                     host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
                     port = 5432, 
-                    user = rstudioapi::askForPassword("Database user"),
-                    password = rstudioapi::askForPassword("Database password"))
-
-# See what tables are available 
-dbListTables(db.con)
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
 
 
 # Count rows before upload
@@ -660,7 +692,7 @@ rc3 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs3 <- dbFetch(rc3)
-#814
+#865
 
 
 # # Append sl.imts.bot to country_metrics
@@ -676,30 +708,28 @@ rs4 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs4 <- dbFetch(rs4)
-#889
+#940
+
 
 dbDisconnect(db.con)
 ```
 
 ## Cook Islands IMTS Balance of Trade Upload
 
-Prior to upload, the country_metrics table had 889 existing records. 
+Prior to upload, the country_metrics table had 940 existing records. 
 
-After the upload, the same table has 1089 records. 
+After the upload, the same table has 1140 records. 
 
 The difference equates to the 200 row count of the Cook Islands IMTS dataset. This means data was successfully uploaded. 
 
 ```{r}
-# Connect to a specific postgres database i.e. Heroku
+# Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
                     host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
                     port = 5432, 
-                    user = rstudioapi::askForPassword("Database user"),
-                    password = rstudioapi::askForPassword("Database password"))
-
-# See what tables are available 
-dbListTables(db.con)
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
 
 
 # Count rows before upload
@@ -707,7 +737,7 @@ rc5 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs5 <- dbFetch(rc5)
-#889
+#940
 
 
 # # Append ck.imts.bot to country_metrics
@@ -723,29 +753,49 @@ rs6 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs6 <- dbFetch(rs6)
-#1089
+#1140
+
 
 dbDisconnect(db.con)
 ```
 
+## Clean up 
 
-# country_metrics
+Remove temp variables used to test.
 
 ```{r}
-# Connect to a specific postgres database i.e. Heroku
+# Remove vars not needed.
+rm(count_recs1,
+   count_recs2,
+   count_recs3,
+   count_recs4,
+   count_recs5,
+   count_recs6, 
+   rc1,
+   rs2, 
+   rc3,
+   rs4,
+   rc5,
+   rs6)
+```
+
+# Final Result: country_metrics
+
+```{r}
+# Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
                     host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
                     port = 5432, 
-                    user = rstudioapi::askForPassword("Database user"),
-                    password = rstudioapi::askForPassword("Database password"))
-
-# See what tables are available 
-dbListTables(db.con)
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
 
 
 # Count rows before upload
 country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM country_metrics"))
 
+
+# Preview
+tail(country_metrics)
 ```
 

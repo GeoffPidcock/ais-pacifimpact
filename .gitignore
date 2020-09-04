@@ -91,3 +91,4 @@ target/
 # R related
 .Rproj.user
 .Rhistory
+.Renviron
