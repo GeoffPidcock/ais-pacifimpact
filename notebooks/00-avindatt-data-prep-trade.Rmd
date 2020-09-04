@@ -8,15 +8,25 @@ output:
 
 # Scope  
 
-Ingest IMTS Data into PostgreSQL database. 
+Ingest IMTS Data available from SPC Statistics for Development Division into PostgreSQL database for the following countries: 
+
+- Fiji 
+- Cook Islands 
+- Solomon Islands
+
+IMTS Data for Vanuatu and Samoa available via the SPC Statistics for Development Division do not meet the projects eligibility criteria. As such, their appropriate trade data will be gathered from alternate sources, referenced below. 
 
 # Reference
 
-IMTS data is available in .xlsx format. It can be downloaded from [SPC Statistics for Development Division](https://sdd.spc.int/contact-us#disclaimer)
+IMTS data for Fiji, Cook Islands and Solomon Islands is available in .xlsx format. It can be downloaded from [SPC Statistics for Development Division](https://sdd.spc.int/contact-us#disclaimer).
+
+Eligible trade data for Samoa can be downloaded from [Samoa Bureau of Statistics](https://www.sbs.gov.ws/images/sbs-documents/Economics/Merchandise-Trade-Report/2020/OVERSEAS_MERCHANDISE_TRADE_JUNE_2020.pdf).
+
+Eligible IMTS trade data for Vanuatu can be downloaded from [Vanuatu National Statistics Office](https://vnso.gov.vu/index.php/statistics-by-topic/trade#latest-trade-news).
 
 # Load Libraries 
 
-```{r}
+```{r load libs}
 # Load openxlsx library 
 if (!require(openxlsx)) {
   install.packages("openxlsx")
@@ -43,7 +53,7 @@ if (!require(RPostgres)) {
 
 ```
 
-# Read Fiji Data 
+# Read IMTS Balance of Trade Fiji Data 
 
 Read in Balance of Trade - All Items for Fiji.
 
@@ -244,7 +254,7 @@ fj.imts.bot <- fj.imts.bot[,
 head(fj.imts.bot)
 ```
 
-# Read Cook Islands Data 
+# Read IMTS Balance of Trade Cook Islands Data 
 
 Read in Balance of Trade - All Items for Cook Islands.
 
@@ -441,7 +451,7 @@ head(ck.imts.bot)
 ```
 
 
-# Read Solomon Islands Data 
+# Read IMTS Balance of Trade Solomon Islands Data 
 
 Read in Balance of Trade - All Items for Cook Islands.
 
@@ -617,6 +627,106 @@ sl.imts.bot <- sl.imts.bot[,
 head(sl.imts.bot)
 ```
 
+# Read Samoa Bureau of Statistics Trade Data 
+
+This data has been extracted manual from the reference source outlined earlier. 
+
+The process followed: 
+
+1. Extract data from PDF
+2. Manipulate into the required data schema using MS Excel. 
+3. Save as .csv to be uploaded to PostgreSQL Database. 
+
+```{r}
+
+```
+
+
+# Read Vanuatu National Statistics Trade Data
+
+This data has been extracted manual from the reference source outlined earlier. 
+
+The process followed: 
+
+1. Extract data from PDF (Page 6, Table 1)
+2. Manipulate into the required data schema using MS Excel. 
+3. Save as .csv to be uploaded to PostgreSQL Database. 
+
+```{r}
+# Read in Vanuatu File 
+vn.imts.bot <- fread('C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/external/Vanuatu IMTS cleaned.csv')
+
+
+head(vn.imts.bot)
+```
+
+Manipulate to fit required data schema. Add appropriate attributes and reorder the dataset to match the required schema. 
+
+```{r}
+# Keep only date, source, name, value, frequency
+vn.imts.bot[, 
+            `:=` (country = NULL,
+                  category = NULL, 
+                  port = NULL, 
+                  currency = NULL)]
+
+# Metric 
+vn.imts.bot[, 
+            `:=` (country = "vn", 
+                  category = "trade", 
+                  properties = "{'currency' = 'vuv 000'}",
+                  metric_key = paste0("vn","-",name,"-",date))]
+
+
+# Change order of columns to align with schema
+vn.imts.bot <- vn.imts.bot[,
+                           .(metric_key,
+                             frequency, 
+                             country,
+                             category, 
+                             source,
+                             name,
+                             date, 
+                             value,
+                             properties)]
+
+head(vn.imts.bot)
+```
+
+Where the the values are for annual frequency, update the date field if it only contains a year value. Make formatting of the date field consistent. 
+
+```{r}
+# Update date 
+vn.imts.bot[date == "2016",
+            date := "2016-12-01"]
+
+# Concatenate date with just month and year to create full date like other datasets
+vn.imts.bot[frequency != "annually", 
+            date := paste0("01-",
+                           date)]
+
+
+# Format Date frequency annual
+vn.imts.bot.a <- vn.imts.bot[frequency == "annually"][, 
+                                                      date := as.Date(date)]
+
+
+# Format Date frequency all others
+vn.imts.bot.b <- vn.imts.bot[frequency != "annually"][, 
+                                                      date := as.Date(date, format = "%d-%b-%y")]
+
+
+# Stack back together 
+vn.imts.bot <- rbind(vn.imts.bot.a, 
+                         vn.imts.bot.b)
+
+# Remove temp ds 
+rm(vn.imts.bot.a,
+   vn.imts.bot.b)
+
+
+head(vn.imts.bot)
+```
 
 # Append to PostgresSQL Database 
 
@@ -759,6 +869,53 @@ count_recs6 <- dbFetch(rs6)
 dbDisconnect(db.con)
 ```
 
+## Vanuatu IMTS VNS Balance of Trade Upload
+
+Prior to upload, the country_metrics table had 1140 existing records. 
+
+After the upload, the same table has 1488 records. 
+
+The difference equates to the 348 row count of the Cook Islands IMTS dataset. This means data was successfully uploaded. 
+
+```{r eval=FALSE}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+rc7 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs7 <- dbFetch(rc7)
+#1140
+
+
+# # Append vn.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics",
+#                         vn.imts.bot,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs8 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs8 <- dbFetch(rs8)
+#1488
+
+
+dbDisconnect(db.con)
+```
+
+
+
 ## Clean up 
 
 Remove temp variables used to test.
@@ -776,7 +933,9 @@ rm(count_recs1,
    rc3,
    rs4,
    rc5,
-   rs6)
+   rs6,
+   rc7,
+   rs8)
 ```
 
 # Final Result: country_metrics
