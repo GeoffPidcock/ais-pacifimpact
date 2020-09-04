@@ -49,7 +49,7 @@ if (!require(RPostgres)) {
 
 ```
 
-# Load Fiji Data 
+# Read Fiji Data 
 
 Read in Balance of Trade - All Items for Fiji.
 
@@ -214,7 +214,7 @@ fj.imts.bot[,
                   country = "fj", 
                   category = "trade", 
                   source = "imts", 
-                  properties = "{currency = fjd}",
+                  properties = "{'currency' = 'fjd'}",
                   metric_key = paste0("fj","-",name,"-",date))]
 
 ```
@@ -235,7 +235,7 @@ fj.imts.bot <- fj.imts.bot[,
                              properties)]
 ```
 
-# Load Cook Islands Data 
+# Read Cook Islands Data 
 
 Read in Balance of Trade - All Items for Cook Islands.
 
@@ -394,7 +394,7 @@ ck.imts.bot[,
                   country = "ck", 
                   category = "trade", 
                   source = "imts", 
-                  properties = "{currency = nzd}",
+                  properties = "{'currency' = 'nzd'}",
                   metric_key = paste0("ck","-",name,"-",date))]
 
 ```
@@ -416,7 +416,7 @@ ck.imts.bot <- ck.imts.bot[,
 ```
 
 
-# Load Solomon Islands Data 
+# Read Solomon Islands Data 
 
 Read in Balance of Trade - All Items for Cook Islands.
 
@@ -558,7 +558,7 @@ sl.imts.bot[,
                   country = "sl", 
                   category = "trade", 
                   source = "imts", 
-                  properties = "{currency = sbd}",
+                  properties = "{'currency' = 'sbd'}",
                   metric_key = paste0("sl","-",name,"-",date))]
 
 ```
@@ -580,7 +580,20 @@ sl.imts.bot <- sl.imts.bot[,
 ```
 
 
-# Append to Database 
+# Append to PostgresSQL Database 
+
+Connect to the hosted PostgreSQL database. 
+
+Table used is country_metrics. 
+
+## Fiji IMTS Balance of Trade Upload
+
+Prior to upload, the country_metrics table had 429 existing records. 
+
+After the upload, the same table has 814 records. 
+
+The difference equates to the 385 row count of the Fiji IMTS dataset. This means data was successfully uploaded. 
+
 ```{r}
 # Connect to a specific postgres database i.e. Heroku
 db.con <- dbConnect(RPostgres::Postgres(),
@@ -593,13 +606,126 @@ db.con <- dbConnect(RPostgres::Postgres(),
 # See what tables are available 
 dbListTables(db.con)
 
-# Test query 
-ts <- RPostgres::dbGetQuery(db.con, 
-                  "SELECT * FROM test LIMIT 5")
 
-tt <- RPostgres::dbGetQuery(db.con, 
-                  "SELECT * FROM test2 LIMIT 5")
+# Count rows before upload
+rc1 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
 
 
+count_recs1 <- dbFetch(rc1)
+#429
+
+
+# # Append fj.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics", 
+#                         fj.imts.bot,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs2 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs2 <- dbFetch(rs2)
+#814
+
+
+dbDisconnect(db.con)
 ```
+
+## Solomon Islands IMTS Balance of Trade Upload
+
+Prior to upload, the country_metrics table had 814 existing records. 
+
+After the upload, the same table has 889 records. 
+
+The difference equates to the 75 row count of the Solomon Islands IMTS dataset. This means data was successfully uploaded. 
+
+```{r}
+# Connect to a specific postgres database i.e. Heroku
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = rstudioapi::askForPassword("Database user"),
+                    password = rstudioapi::askForPassword("Database password"))
+
+# See what tables are available 
+dbListTables(db.con)
+
+
+# Count rows before upload
+rc3 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs3 <- dbFetch(rc3)
+#814
+
+
+# # Append sl.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics",
+#                         sl.imts.bot,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs4 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs4 <- dbFetch(rs4)
+#889
+
+dbDisconnect(db.con)
+```
+
+## Cook Islands IMTS Balance of Trade Upload
+
+Prior to upload, the country_metrics table had 889 existing records. 
+
+After the upload, the same table has 1089 records. 
+
+The difference equates to the 200 row count of the Cook Islands IMTS dataset. This means data was successfully uploaded. 
+
+```{r}
+# Connect to a specific postgres database i.e. Heroku
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = rstudioapi::askForPassword("Database user"),
+                    password = rstudioapi::askForPassword("Database password"))
+
+# See what tables are available 
+dbListTables(db.con)
+
+
+# Count rows before upload
+rc5 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs5 <- dbFetch(rc5)
+#889
+
+
+# # Append ck.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics",
+#                         ck.imts.bot,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs6 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs6 <- dbFetch(rs6)
+#1089
+
+dbDisconnect(db.con)
+```
+
 
