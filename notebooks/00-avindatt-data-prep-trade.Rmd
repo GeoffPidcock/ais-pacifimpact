@@ -57,7 +57,7 @@ fj.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/
                          rows = c(28:111),
                          cols = c(1:7))
 
-fj.imts.bot
+head(fj.imts.bot)
 ```
 
 Add and fix missing variable names. 
@@ -110,7 +110,7 @@ setnames(fj.imts.bot,
          "trade-balance")
 
 
-fj.imts.bot
+head(fj.imts.bot)
 ```
 
 Update Year values.
@@ -152,7 +152,7 @@ fj.imts.bot[73:77,
             year := 2020]
 
 
-fj.imts.bot
+head(fj.imts.bot)
 ```
 
 Melt the table to adhere to the key-value pair schema design. 
@@ -168,7 +168,7 @@ fj.imts.bot <- melt.data.table(fj.imts.bot,
                                                             "trade-balance"))
 
 
-fj.imts.bot
+head(fj.imts.bot)
 ```
 
 Create Date from year and month. 
@@ -194,7 +194,7 @@ fj.imts.bot[,
                           month := NULL]
 
 
-fj.imts.bot
+head(fj.imts.bot)
 ```
 
 Rename "variable" to "name". 
@@ -206,7 +206,7 @@ setnames(fj.imts.bot,
          "name")
 
 
-fj.imts.bot
+head(fj.imts.bot)
 ```
 
 Add metric key, frequency, country, category, source and property informations. 
@@ -222,7 +222,7 @@ fj.imts.bot[,
                   metric_key = paste0("fj","-",name,"-",date))]
 
 
-fj.imts.bot
+head(fj.imts.bot)
 ```
 
 Reorder data. 
@@ -241,7 +241,7 @@ fj.imts.bot <- fj.imts.bot[,
                              properties)]
 
 
-fj.imts.bot
+head(fj.imts.bot)
 ```
 
 # Read Cook Islands Data 
@@ -259,7 +259,7 @@ ck.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/
                          cols = c(1:7))
 
 
-ck.imts.bot
+head(ck.imts.bot)
 ```
 
 Add and fix missing variable names. 
@@ -312,7 +312,7 @@ setnames(ck.imts.bot,
          "trade-balance")
 
 
-ck.imts.bot
+head(ck.imts.bot)
 ```
 
 Remove rogue empty row. 
@@ -322,7 +322,7 @@ Remove rogue empty row.
 ck.imts.bot <- ck.imts.bot[!is.na(month)]
 
 
-ck.imts.bot
+head(ck.imts.bot)
 ```
 
 
@@ -350,7 +350,7 @@ ck.imts.bot[37:40,
             year := 2020]
 
 
-ck.imts.bot
+head(ck.imts.bot)
 ```
 
 Melt the table to adhere to the key-value pair schema design. 
@@ -365,7 +365,7 @@ ck.imts.bot <- melt.data.table(ck.imts.bot,
                                                             "imports-cif",
                                                             "trade-balance"))
 
-ck.imts.bot
+head(ck.imts.bot)
 ```
 
 Create Date from year and month. 
@@ -391,7 +391,7 @@ ck.imts.bot[,
                           month := NULL]
 
 
-ck.imts.bot
+head(ck.imts.bot)
 ```
 
 Rename "variable" to "name". 
@@ -403,7 +403,7 @@ setnames(ck.imts.bot,
          "name")
 
 
-ck.imts.bot
+head(ck.imts.bot)
 ```
 
 Add metric key, frequency, country, category, source and property informations. 
@@ -419,7 +419,7 @@ ck.imts.bot[,
                   metric_key = paste0("ck","-",name,"-",date))]
 
 
-ck.imts.bot
+head(ck.imts.bot)
 ```
 
 Reorder data. 
@@ -437,7 +437,7 @@ ck.imts.bot <- ck.imts.bot[,
                              value,
                              properties)]
 
-ck.imts.bot
+head(ck.imts.bot)
 ```
 
 
@@ -457,7 +457,7 @@ sl.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/
 
 
 
-sl.imts.bot
+head(sl.imts.bot)
 ```
 
 Add and fix missing variable names. 
@@ -509,7 +509,7 @@ setnames(sl.imts.bot,
          "X7",
          "trade-balance")
 
-sl.imts.bot
+head(sl.imts.bot)
 ```
 
 Update Year values.
@@ -526,7 +526,7 @@ sl.imts.bot[13:15,
             year := 2019]
 
 
-sl.imts.bot
+head(sl.imts.bot)
 ```
 
 Melt the table to adhere to the key-value pair schema design. 
@@ -541,7 +541,7 @@ sl.imts.bot <- melt.data.table(sl.imts.bot,
                                                             "imports-cif",
                                                             "trade-balance"))
 
-sl.imts.bot
+head(sl.imts.bot)
 ```
 
 Create Date from year and month. 
@@ -567,7 +567,7 @@ sl.imts.bot[,
                           month := NULL]
 
 
-sl.imts.bot
+head(sl.imts.bot)
 ```
 
 Rename "variable" to "name". 
@@ -579,7 +579,7 @@ setnames(sl.imts.bot,
          "name")
 
 
-sl.imts.bot
+head(sl.imts.bot)
 ```
 
 Add metric key, frequency, country, category, source and property informations. 
@@ -595,7 +595,7 @@ sl.imts.bot[,
                   metric_key = paste0("sb","-",name,"-",date))]
 
 
-sl.imts.bot
+head(sl.imts.bot)
 ```
 
 Reorder data. 
@@ -614,7 +614,7 @@ sl.imts.bot <- sl.imts.bot[,
                              properties)]
 
 
-sl.imts.bot
+head(sl.imts.bot)
 ```
 
 
@@ -632,7 +632,7 @@ After the upload, the same table has 865 records.
 
 The difference equates to the 385 row count of the Fiji IMTS dataset. This means data was successfully uploaded. 
 
-```{r}
+```{r eval=FALSE}
 # Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
@@ -677,7 +677,7 @@ After the upload, the same table has 940 records.
 
 The difference equates to the 75 row count of the Solomon Islands IMTS dataset. This means data was successfully uploaded. 
 
-```{r}
+```{r eval=FALSE}
 # Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
@@ -722,7 +722,7 @@ After the upload, the same table has 1140 records.
 
 The difference equates to the 200 row count of the Cook Islands IMTS dataset. This means data was successfully uploaded. 
 
-```{r}
+```{r eval=FALSE}
 # Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
@@ -763,7 +763,7 @@ dbDisconnect(db.con)
 
 Remove temp variables used to test.
 
-```{r}
+```{r eval=FALSE}
 # Remove vars not needed.
 rm(count_recs1,
    count_recs2,
