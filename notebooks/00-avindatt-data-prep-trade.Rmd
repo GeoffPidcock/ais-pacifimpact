@@ -770,12 +770,6 @@ Table used is country_metrics.
 
 ## Fiji IMTS Balance of Trade Upload
 
-Prior to upload, the country_metrics table had 480 existing records. 
-
-After the upload, the same table has 865 records. 
-
-The difference equates to the 385 row count of the Fiji IMTS dataset. This means data was successfully uploaded. 
-
 ```{r eval=FALSE}
 # Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
@@ -791,7 +785,7 @@ rc1 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs1 <- dbFetch(rc1)
-#480
+
 
 
 # # Append fj.imts.bot to country_metrics
@@ -807,19 +801,12 @@ rs2 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs2 <- dbFetch(rs2)
-#865
 
 
 dbDisconnect(db.con)
 ```
 
 ## Solomon Islands IMTS Balance of Trade Upload
-
-Prior to upload, the country_metrics table had 865 existing records. 
-
-After the upload, the same table has 940 records. 
-
-The difference equates to the 75 row count of the Solomon Islands IMTS dataset. This means data was successfully uploaded. 
 
 ```{r eval=FALSE}
 # Connect to a specific postgres database
@@ -836,7 +823,6 @@ rc3 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs3 <- dbFetch(rc3)
-#865
 
 
 # # Append sl.imts.bot to country_metrics
@@ -852,19 +838,12 @@ rs4 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs4 <- dbFetch(rs4)
-#940
 
 
 dbDisconnect(db.con)
 ```
 
 ## Cook Islands IMTS Balance of Trade Upload
-
-Prior to upload, the country_metrics table had 940 existing records. 
-
-After the upload, the same table has 1140 records. 
-
-The difference equates to the 200 row count of the Cook Islands IMTS dataset. This means data was successfully uploaded. 
 
 ```{r eval=FALSE}
 # Connect to a specific postgres database
@@ -881,7 +860,6 @@ rc5 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs5 <- dbFetch(rc5)
-#940
 
 
 # # Append ck.imts.bot to country_metrics
@@ -897,19 +875,12 @@ rs6 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs6 <- dbFetch(rs6)
-#1140
 
 
 dbDisconnect(db.con)
 ```
 
 ## Vanuatu IMTS VNS Balance of Trade Upload
-
-Prior to upload, the country_metrics table had 1140 existing records. 
-
-After the upload, the same table has 1488 records. 
-
-The difference equates to the 348 row count of the Cook Islands IMTS dataset. This means data was successfully uploaded. 
 
 ```{r eval=FALSE}
 # Connect to a specific postgres database
@@ -926,7 +897,6 @@ rc7 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs7 <- dbFetch(rc7)
-#1140
 
 
 # # Append vn.imts.bot to country_metrics
@@ -942,7 +912,6 @@ rs8 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs8 <- dbFetch(rs8)
-#1488
 
 
 dbDisconnect(db.con)
@@ -950,7 +919,7 @@ dbDisconnect(db.con)
 
 ## Samoa IMTS SBS Balance of Trade Upload 
 
-```{r}
+```{r eval=FALSE}
 # Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
@@ -965,7 +934,6 @@ rc9 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs9 <- dbFetch(rc9)
-#1140
 
 
 # # Append ws.imts.bot to country_metrics
@@ -981,13 +949,11 @@ rs10 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_me
 
 
 count_recs10 <- dbFetch(rs10)
-#1488
 
 
 dbDisconnect(db.con)
 
 ```
-
 
 ## Clean up 
 
@@ -995,17 +961,7 @@ Remove temp variables used to test.
 
 ```{r eval=FALSE}
 # Remove vars not needed.
-rm(count_recs1,
-   count_recs2,
-   count_recs3,
-   count_recs4,
-   count_recs5,
-   count_recs6,
-   count_recs7, 
-   count_recs8,
-   count_recs9,
-   count_recs10,
-   rc1,
+rm(rc1,
    rs2, 
    rc3,
    rs4,

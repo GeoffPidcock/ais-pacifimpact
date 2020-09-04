@@ -5,13 +5,30 @@ Avin Datt - PacifImpact
 
 # Scope
 
-Ingest IMTS Data into PostgreSQL database.
+Ingest IMTS Data available from SPC Statistics for Development Division
+into PostgreSQL database for the following countries:
+
+  - Fiji
+  - Cook Islands
+  - Solomon Islands
+
+IMTS Data for Vanuatu and Samoa available via the SPC Statistics for
+Development Division do not meet the projects eligibility criteria. As
+such, their appropriate trade data will be gathered from alternate
+sources, referenced below.
 
 # Reference
 
-IMTS data is available in .xlsx format. It can be downloaded from [SPC
-Statistics for Development
-Division](https://sdd.spc.int/contact-us#disclaimer)
+IMTS data for Fiji, Cook Islands and Solomon Islands is available in
+.xlsx format. It can be downloaded from [SPC Statistics for Development
+Division](https://sdd.spc.int/contact-us#disclaimer).
+
+Eligible trade data for Samoa can be downloaded from [Samoa Bureau of
+Statistics](https://www.sbs.gov.ws/images/sbs-documents/Economics/Merchandise-Trade-Report/2020/OVERSEAS_MERCHANDISE_TRADE_JUNE_2020.pdf).
+
+Eligible IMTS trade data for Vanuatu can be downloaded from [Vanuatu
+National Statistics
+Office](https://vnso.gov.vu/index.php/statistics-by-topic/trade#latest-trade-news).
 
 # Load Libraries
 
@@ -55,7 +72,7 @@ if (!require(RPostgres)) {
 
     ## Loading required package: RPostgres
 
-# Read Fiji Data
+# Read IMTS Balance of Trade Fiji Data
 
 Read in Balance of Trade - All Items for Fiji.
 
@@ -349,7 +366,7 @@ head(fj.imts.bot)
     ## 5: exports-fob-domestic 2014-05-01 115355 {'currency' = 'fjd 000'}
     ## 6: exports-fob-domestic 2014-06-01 103352 {'currency' = 'fjd 000'}
 
-# Read Cook Islands Data
+# Read IMTS Balance of Trade Cook Islands Data
 
 Read in Balance of Trade - All Items for Cook Islands.
 
@@ -652,7 +669,7 @@ head(ck.imts.bot)
     ## 5: exports-fob-domestic 2017-05-01   171 {'currency' = 'nzd 000'}
     ## 6: exports-fob-domestic 2017-06-01  3164 {'currency' = 'nzd 000'}
 
-# Read Solomon Islands Data
+# Read IMTS Balance of Trade Solomon Islands Data
 
 Read in Balance of Trade - All Items for Cook Islands.
 
@@ -921,6 +938,219 @@ head(sl.imts.bot)
     ## 5: exports-fob-domestic 2018-05-01 376429.7 {'currency' = 'sbd 000'}
     ## 6: exports-fob-domestic 2018-06-01 286506.1 {'currency' = 'sbd 000'}
 
+# Read Samoa Bureau of Statistics Trade Data
+
+This data has been extracted manual from the reference source outlined
+earlier.
+
+The process followed:
+
+1.  Extract data from PDF
+2.  Manipulate into the required data schema using MS Excel.
+3.  Save as .csv to be uploaded to PostgreSQL Database.
+
+<!-- end list -->
+
+``` r
+# Read in Samoa File 
+ws.imts.bot <- fread('C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/interim/Samoa IMTS.csv')
+
+
+head(ws.imts.bot)
+```
+
+    ##    V1      date          name  value country category frequency source currency
+    ## 1:  0 1/01/2018 total-exports   6181     WSM    trade   monthly    sbs 000 tala
+    ## 2:  1 1/01/2018 total-imports  74546     WSM    trade   monthly    sbs 000 tala
+    ## 3:  2 1/01/2018 trade-balance -68365     WSM    trade   monthly    sbs 000 tala
+    ## 4:  3 1/02/2018 total-exports   5784     WSM    trade   monthly    sbs 000 tala
+    ## 5:  4 1/02/2018 total-imports  68186     WSM    trade   monthly    sbs 000 tala
+    ## 6:  5 1/02/2018 trade-balance -62402     WSM    trade   monthly    sbs 000 tala
+
+Manipulate to fit required data schema. Add appropriate attributes and
+reorder the dataset to match the required schema.
+
+``` r
+# Keep only date, source, name, value, frequency
+ws.imts.bot[, 
+            `:=` (V1 = NULL,
+                  country = NULL,
+                  currency = NULL)]
+
+# Metric 
+ws.imts.bot[, 
+            `:=` (country = "ws", 
+                  properties = "{'currency' = 'wst 000'}",
+                  metric_key = paste0("ws","-",name,"-",date))]
+
+
+# Change order of columns to align with schema
+ws.imts.bot <- ws.imts.bot[,
+                           .(metric_key,
+                             frequency, 
+                             country,
+                             category, 
+                             source,
+                             name,
+                             date, 
+                             value,
+                             properties)]
+
+head(ws.imts.bot)
+```
+
+    ##                    metric_key frequency country category source          name
+    ## 1: ws-total-exports-1/01/2018   monthly      ws    trade    sbs total-exports
+    ## 2: ws-total-imports-1/01/2018   monthly      ws    trade    sbs total-imports
+    ## 3: ws-trade-balance-1/01/2018   monthly      ws    trade    sbs trade-balance
+    ## 4: ws-total-exports-1/02/2018   monthly      ws    trade    sbs total-exports
+    ## 5: ws-total-imports-1/02/2018   monthly      ws    trade    sbs total-imports
+    ## 6: ws-trade-balance-1/02/2018   monthly      ws    trade    sbs trade-balance
+    ##         date  value               properties
+    ## 1: 1/01/2018   6181 {'currency' = 'wst 000'}
+    ## 2: 1/01/2018  74546 {'currency' = 'wst 000'}
+    ## 3: 1/01/2018 -68365 {'currency' = 'wst 000'}
+    ## 4: 1/02/2018   5784 {'currency' = 'wst 000'}
+    ## 5: 1/02/2018  68186 {'currency' = 'wst 000'}
+    ## 6: 1/02/2018 -62402 {'currency' = 'wst 000'}
+
+# Read Vanuatu National Statistics Trade Data
+
+This data has been extracted manual from the reference source outlined
+earlier.
+
+The process followed:
+
+1.  Extract data from PDF (Page 6, Table 1)
+2.  Manipulate into the required data schema using MS Excel.
+3.  Save as .csv to be uploaded to PostgreSQL Database.
+
+<!-- end list -->
+
+``` r
+# Read in Vanuatu File 
+vn.imts.bot <- fread('C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/interim/Vanuatu IMTS cleaned.csv')
+
+
+head(vn.imts.bot)
+```
+
+    ##    country category source date               name       port    value
+    ## 1:     VUT    trade   vnso 2016      trade-balance            -35962.0
+    ## 2:     VUT    trade   vnso 2016      balance-ratio                 0.1
+    ## 3:     VUT    trade   vnso 2016 luganville-exports luganville   3940.0
+    ## 4:     VUT    trade   vnso 2016  port-vila-exports  port-vila   1506.0
+    ## 5:     VUT    trade   vnso 2016   combined-exports              5446.0
+    ## 6:     VUT    trade   vnso 2016         re-exports                 0.0
+    ##    frequency     currency
+    ## 1:  annually million-vatu
+    ## 2:  annually million-vatu
+    ## 3:  annually million-vatu
+    ## 4:  annually million-vatu
+    ## 5:  annually million-vatu
+    ## 6:  annually million-vatu
+
+Manipulate to fit required data schema. Add appropriate attributes and
+reorder the dataset to match the required schema.
+
+``` r
+# Keep only date, source, name, value, frequency
+vn.imts.bot[, 
+            `:=` (country = NULL,
+                  category = NULL, 
+                  port = NULL, 
+                  currency = NULL)]
+
+# Metric 
+vn.imts.bot[, 
+            `:=` (country = "vn", 
+                  category = "trade", 
+                  properties = "{'currency' = 'vuv 000'}",
+                  metric_key = paste0("vn","-",name,"-",date))]
+
+
+# Change order of columns to align with schema
+vn.imts.bot <- vn.imts.bot[,
+                           .(metric_key,
+                             frequency, 
+                             country,
+                             category, 
+                             source,
+                             name,
+                             date, 
+                             value,
+                             properties)]
+
+head(vn.imts.bot)
+```
+
+    ##                    metric_key frequency country category source
+    ## 1:      vn-trade-balance-2016  annually      vn    trade   vnso
+    ## 2:      vn-balance-ratio-2016  annually      vn    trade   vnso
+    ## 3: vn-luganville-exports-2016  annually      vn    trade   vnso
+    ## 4:  vn-port-vila-exports-2016  annually      vn    trade   vnso
+    ## 5:   vn-combined-exports-2016  annually      vn    trade   vnso
+    ## 6:         vn-re-exports-2016  annually      vn    trade   vnso
+    ##                  name date    value               properties
+    ## 1:      trade-balance 2016 -35962.0 {'currency' = 'vuv 000'}
+    ## 2:      balance-ratio 2016      0.1 {'currency' = 'vuv 000'}
+    ## 3: luganville-exports 2016   3940.0 {'currency' = 'vuv 000'}
+    ## 4:  port-vila-exports 2016   1506.0 {'currency' = 'vuv 000'}
+    ## 5:   combined-exports 2016   5446.0 {'currency' = 'vuv 000'}
+    ## 6:         re-exports 2016      0.0 {'currency' = 'vuv 000'}
+
+Where the the values are for annual frequency, update the date field if
+it only contains a year value. Make formatting of the date field
+consistent.
+
+``` r
+# Update date 
+vn.imts.bot[date == "2016",
+            date := "2016-12-01"]
+
+# Concatenate date with just month and year to create full date like other datasets
+vn.imts.bot[frequency != "annually", 
+            date := paste0("01-",
+                           date)]
+
+
+# Format Date frequency annual
+vn.imts.bot.a <- vn.imts.bot[frequency == "annually"][, 
+                                                      date := as.Date(date)]
+
+
+# Format Date frequency all others
+vn.imts.bot.b <- vn.imts.bot[frequency != "annually"][, 
+                                                      date := as.Date(date, format = "%d-%b-%y")]
+
+
+# Stack back together 
+vn.imts.bot <- rbind(vn.imts.bot.a, 
+                         vn.imts.bot.b)
+
+# Remove temp ds 
+rm(vn.imts.bot.a,
+   vn.imts.bot.b)
+
+
+head(vn.imts.bot)
+```
+
+    ##                    metric_key frequency country category source
+    ## 1:      vn-trade-balance-2016  annually      vn    trade   vnso
+    ## 2:      vn-balance-ratio-2016  annually      vn    trade   vnso
+    ## 3: vn-luganville-exports-2016  annually      vn    trade   vnso
+    ## 4:  vn-port-vila-exports-2016  annually      vn    trade   vnso
+    ## 5:   vn-combined-exports-2016  annually      vn    trade   vnso
+    ## 6:         vn-re-exports-2016  annually      vn    trade   vnso
+    ##                  name       date    value               properties
+    ## 1:      trade-balance 2016-12-01 -35962.0 {'currency' = 'vuv 000'}
+    ## 2:      balance-ratio 2016-12-01      0.1 {'currency' = 'vuv 000'}
+    ## 3: luganville-exports 2016-12-01   3940.0 {'currency' = 'vuv 000'}
+    ## 4:  port-vila-exports 2016-12-01   1506.0 {'currency' = 'vuv 000'}
+    ## 5:   combined-exports 2016-12-01   5446.0 {'currency' = 'vuv 000'}
+    ## 6:         re-exports 2016-12-01      0.0 {'currency' = 'vuv 000'}
+
 # Append to PostgresSQL Database
 
 Connect to the hosted PostgreSQL database.
@@ -928,13 +1158,6 @@ Connect to the hosted PostgreSQL database.
 Table used is country\_metrics.
 
 ## Fiji IMTS Balance of Trade Upload
-
-Prior to upload, the country\_metrics table had 480 existing records.
-
-After the upload, the same table has 865 records.
-
-The difference equates to the 385 row count of the Fiji IMTS dataset.
-This means data was successfully uploaded.
 
 ``` r
 # Connect to a specific postgres database
@@ -951,7 +1174,7 @@ rc1 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs1 <- dbFetch(rc1)
-#480
+
 
 
 # # Append fj.imts.bot to country_metrics
@@ -967,20 +1190,12 @@ rs2 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs2 <- dbFetch(rs2)
-#865
 
 
 dbDisconnect(db.con)
 ```
 
 ## Solomon Islands IMTS Balance of Trade Upload
-
-Prior to upload, the country\_metrics table had 865 existing records.
-
-After the upload, the same table has 940 records.
-
-The difference equates to the 75 row count of the Solomon Islands IMTS
-dataset. This means data was successfully uploaded.
 
 ``` r
 # Connect to a specific postgres database
@@ -997,7 +1212,6 @@ rc3 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs3 <- dbFetch(rc3)
-#865
 
 
 # # Append sl.imts.bot to country_metrics
@@ -1013,20 +1227,12 @@ rs4 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs4 <- dbFetch(rs4)
-#940
 
 
 dbDisconnect(db.con)
 ```
 
 ## Cook Islands IMTS Balance of Trade Upload
-
-Prior to upload, the country\_metrics table had 940 existing records.
-
-After the upload, the same table has 1140 records.
-
-The difference equates to the 200 row count of the Cook Islands IMTS
-dataset. This means data was successfully uploaded.
 
 ``` r
 # Connect to a specific postgres database
@@ -1043,7 +1249,6 @@ rc5 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs5 <- dbFetch(rc5)
-#940
 
 
 # # Append ck.imts.bot to country_metrics
@@ -1059,7 +1264,80 @@ rs6 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_met
 
 
 count_recs6 <- dbFetch(rs6)
-#1140
+
+
+dbDisconnect(db.con)
+```
+
+## Vanuatu IMTS VNS Balance of Trade Upload
+
+``` r
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+rc7 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs7 <- dbFetch(rc7)
+
+
+# # Append vn.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics",
+#                         vn.imts.bot,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs8 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs8 <- dbFetch(rs8)
+
+
+dbDisconnect(db.con)
+```
+
+## Samoa IMTS SBS Balance of Trade Upload
+
+``` r
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+rc9 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs9 <- dbFetch(rc9)
+
+
+# # Append ws.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics",
+#                         ws.imts.bot,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs10 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs10 <- dbFetch(rs10)
 
 
 dbDisconnect(db.con)
@@ -1071,18 +1349,16 @@ Remove temp variables used to test.
 
 ``` r
 # Remove vars not needed.
-rm(count_recs1,
-   count_recs2,
-   count_recs3,
-   count_recs4,
-   count_recs5,
-   count_recs6, 
-   rc1,
+rm(rc1,
    rs2, 
    rc3,
    rs4,
    rc5,
-   rs6)
+   rs6,
+   rc7,
+   rs8,
+   rc9,
+   rs10)
 ```
 
 # Final Result: country\_metrics
@@ -1105,17 +1381,17 @@ country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM count
 tail(country_metrics)
 ```
 
-    ##                     metric_key frequency country category source          name
-    ## 1: ck-trade-balance-2019-11-01   monthly      ck    trade   imts trade-balance
-    ## 2: ck-trade-balance-2019-12-01   monthly      ck    trade   imts trade-balance
-    ## 3: ck-trade-balance-2020-01-01   monthly      ck    trade   imts trade-balance
-    ## 4: ck-trade-balance-2020-02-01   monthly      ck    trade   imts trade-balance
-    ## 5: ck-trade-balance-2020-03-01   monthly      ck    trade   imts trade-balance
-    ## 6: ck-trade-balance-2020-04-01   monthly      ck    trade   imts trade-balance
-    ##          date    value               properties
-    ## 1: 2019-11-01 -20348.4 {'currency' = 'nzd 000'}
-    ## 2: 2019-12-01 -20927.7 {'currency' = 'nzd 000'}
-    ## 3: 2020-01-01 -10354.0 {'currency' = 'nzd 000'}
-    ## 4: 2020-02-01 -14952.0 {'currency' = 'nzd 000'}
-    ## 5: 2020-03-01  -9485.0 {'currency' = 'nzd 000'}
-    ## 6: 2020-04-01 -11800.0 {'currency' = 'nzd 000'}
+    ##                    metric_key frequency country category source          name
+    ## 1: ws-total-exports-1/05/2020   monthly      ws    trade    sbs total-exports
+    ## 2: ws-total-imports-1/05/2020   monthly      ws    trade    sbs total-imports
+    ## 3: ws-trade-balance-1/05/2020   monthly      ws    trade    sbs trade-balance
+    ## 4: ws-total-exports-1/06/2020   monthly      ws    trade    sbs total-exports
+    ## 5: ws-total-imports-1/06/2020   monthly      ws    trade    sbs total-imports
+    ## 6: ws-trade-balance-1/06/2020   monthly      ws    trade    sbs trade-balance
+    ##         date  value               properties
+    ## 1: 1/05/2020   7924 {'currency' = 'wst 000'}
+    ## 2: 1/05/2020  53370 {'currency' = 'wst 000'}
+    ## 3: 1/05/2020 -45446 {'currency' = 'wst 000'}
+    ## 4: 1/06/2020   7882 {'currency' = 'wst 000'}
+    ## 5: 1/06/2020  59226 {'currency' = 'wst 000'}
+    ## 6: 1/06/2020 -51344 {'currency' = 'wst 000'}
