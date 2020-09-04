@@ -582,12 +582,24 @@ sl.imts.bot <- sl.imts.bot[,
 
 # Append to Database 
 ```{r}
-library(DBI)
 # Connect to a specific postgres database i.e. Heroku
-db.con <- dbConnect(RPostgres::Postgres(),dbname = 'aishackathon', 
-                 host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', # i.e. 'ec2-54-83-201-96.compute-1.amazonaws.com'
-                 port = 5432, # or any other port specified by your DBA
-                 user = rstudioapi::askForPassword("Database user"),
-                 password = rstudioapi::askForPassword("Database password"))
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = rstudioapi::askForPassword("Database user"),
+                    password = rstudioapi::askForPassword("Database password"))
+
+# See what tables are available 
+dbListTables(db.con)
+
+# Test query 
+ts <- RPostgres::dbGetQuery(db.con, 
+                  "SELECT * FROM test LIMIT 5")
+
+tt <- RPostgres::dbGetQuery(db.con, 
+                  "SELECT * FROM test2 LIMIT 5")
+
+
 ```
 
