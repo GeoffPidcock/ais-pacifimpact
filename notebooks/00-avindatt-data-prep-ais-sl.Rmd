@@ -1,0 +1,128 @@
+---
+title: "Data Prep - Solomon Islands AIS"
+author: "Avin Datt - PacifImpact"
+date: "04 September 2020"
+output: 
+  github_document
+
+---
+
+
+AIS data was acquired via UNGP but due to the fact cluster resources were scarce, AIS data had to be extracted from Spark and then stored in a database for the wider PacifImpact team to access. 
+
+# Load Libraries
+
+```{r load libs}
+# Load data.table library
+if (!require(data.table)) {
+  install.packages("data.table")
+  library(data.table)
+}
+
+# Load DBI library
+if (!require(DBI)) {
+  install.packages("DBI")
+  library(DBI)
+}
+
+# Load DBI library
+if (!require(RPostgres)) {
+  install.packages("RPostgres")
+  library(RPostgres)
+}
+
+```
+
+# Read AIS Honiora
+
+Read the files extracted from UNGP for Honiora, Solomon Islands. 
+
+```{r}
+# Honiora files
+file.list <- list.files(path = "./data/external/ais_sl_honiora/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+honiora.list <- lapply(paste0("./data/external/ais_sl_honiora/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+honiora.list <- rbindlist(honiora.list)
+
+
+head(honiora.list)
+```
+
+# Write AIS Honiora to PostgreSQL
+
+```{r eval=FALSE}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# # Append honiora.list to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "stg_ais",
+#                         honiora.list,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+rm(honiora.list)
+
+```
+
+# Read AIS Noro
+
+Read the files extracted from UNGP for Noro, Solomon Islands. 
+
+```{r}
+# Noro files
+file.list <- list.files(path = "./data/external/ais_sl_noro/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+noro.list <- lapply(paste0("./data/external/ais_sl_noro/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+noro.list <- rbindlist(noro.list)
+
+
+head(noro.list)
+```
+
+# Write AIS Noro to PostgreSQL
+
+```{r eval=FALSE}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# # Append honiora.list to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "stg_ais",
+#                         noro.list,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+rm(noro.list)
+
+```
