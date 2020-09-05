@@ -1,0 +1,131 @@
+---
+title: "Data Prep - Fiji AIS"
+author: "Avin Datt - PacifImpact"
+date: "04 September 2020"
+output: 
+  github_document
+---
+
+# Scope 
+
+AIS data was acquired via UNGP but due to the fact cluster resources were scarce, AIS data had to be extracted from Spark and then stored in a database for the wider PacifImpact team to access. 
+
+# Load Libraries
+
+```{r load libs}
+# Load data.table library
+if (!require(data.table)) {
+  install.packages("data.table")
+  library(data.table)
+}
+
+# Load DBI library
+if (!require(DBI)) {
+  install.packages("DBI")
+  library(DBI)
+}
+
+# Load DBI library
+if (!require(RPostgres)) {
+  install.packages("RPostgres")
+  library(RPostgres)
+}
+
+```
+
+# Read AIS Suva
+
+Read the files extracted from UNGP for Suva, Fiji Islands. 
+
+```{r}
+# Suva files
+file.list <- list.files(path = "./data/external/ais_fj_suva/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+suva.list <- lapply(paste0("./data/external/ais_fj_suva/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+suva.list <- rbindlist(suva.list)
+
+
+head(suva.list)
+```
+
+# Write AIS Suva to PostgreSQL
+
+```{r eval=FALSE}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# # Append ws.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "stg_ais",
+#                         suva.list,
+#                         append = FALSE,
+#                         row.names = FALSE)
+
+
+rm(suva.list)
+
+```
+
+# Read AIS Lautoka
+
+Read the files extracted from UNGP for Lautoka, Fiji Islands. 
+
+```{r}
+# Suva files
+file.list <- list.files(path = "./data/external/ais_fj_lautoka/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+lautoka.list <- lapply(paste0("./data/external/ais_fj_lautoka/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+lautoka.list <- rbindlist(lautoka.list)
+
+
+head(lautoka.list)
+```
+
+# Write AIS Lautoka to PostgreSQL
+
+```{r eval=FALSE}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# # Append ws.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "stg_ais",
+#                         lautoka.list,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+count <- dbGetQuery(db.con, 'select count(*) from stg_ais')
+# 8841715 records
+```
+
+ 
+
