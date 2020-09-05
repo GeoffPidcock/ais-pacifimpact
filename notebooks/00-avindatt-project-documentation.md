@@ -1,0 +1,86 @@
+PacifImpact - Project Documentation
+================
+Avin Datt - PacifImpact
+04 September 2020
+
+# Background
+
+> Nowcasting the human cost of COVID in the Pacific Islands through
+> joining AIS data with local measures.
+
+An Independent Study of Statistics (Bean 2016) notes “the longer a
+decision-maker has to wait for the statistics, the less useful they are
+likely to be”. This is even more true in the Pacific Islands, where a
+combination of lack of resources and low technical capability hampers
+the production of reliable and timely macroeconomic data.
+
+The Pacific’s early success in fending off COVID-19 does not render the
+region immune to the far-reaching effects of the virus. Pacific nations,
+which heavily rely on tourism and trade, are already feeling the
+devastating economic consequences of the crisis. Some estimates put a
+regional economic contraction as high as 10 per cent for this year
+alone. While governments are drawing on every domestic resource
+available to stimulate their economies, the region is struggling to
+precisely evaluate the economic fallout of the pandemic.
+
+There is an opportunity to nowcast key economic indicators in the
+Pacific Island countries, specifically looking at the impacts of
+COVID-19 to allow for more immediate action. Available present
+statistics based on real-time maritime data can give a more precise and
+accurate point of knowledge for governments and organisations involved
+in the region.
+
+Using data from countries with higher-quality statistics such as Fiji as
+a benchmark, we will produce indicators conveying economic impact using
+AIS-based port calls and test them against official statistics. The
+model will include multiple reliable data sources to allow for a
+scalable yet comprehensive estimation. This approach and final
+deliverable will interactively show the current state of the economy and
+impacts of COVID-19 in the Pacific Islands, as well as allowing local
+governments for an ongoing monitoring of key economic indicators.
+
+## Objectives
+
+## Success Criteria
+
+## Requirements, Assumptions, Constraints
+
+## Risks and Contingencies
+
+## Terminology
+
+# Data Mining Goals
+
+## Goals
+
+## Success Criteria
+
+# Project Plan
+
+## Initial Assessment of Tools & Techniques
+
+# Initial Data Collection Report
+
+# Data Description Report
+
+# Data Exploration Report
+
+# Data Quality Report
+
+# Rationale for Inclusion/Exclusion
+
+# Dataset
+
+# References
+
+<div id="refs" class="references">
+
+<div id="ref-bean2016">
+
+Bean, Professor Sir Charles. 2016. “Independent Review of Uk Economic
+Statistics.” London School of Economics.
+<https://www.gov.uk/government/publications/independent-review-of-uk-economic-statistics-final-report>.
+
+</div>
+
+</div>
