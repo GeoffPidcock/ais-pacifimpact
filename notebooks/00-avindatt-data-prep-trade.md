@@ -1067,7 +1067,7 @@ vn.imts.bot[,
 vn.imts.bot[, 
             `:=` (country = "vn", 
                   category = "trade", 
-                  properties = "{'currency' = 'vuv 000'}",
+                  properties = "{'currency' = 'million vatu'}",
                   metric_key = paste0("vn","-",name,"-",date))]
 
 
@@ -1093,13 +1093,13 @@ head(vn.imts.bot)
     ## 4:  vn-port-vila-exports-2016  annually      vn    trade   vnso
     ## 5:   vn-combined-exports-2016  annually      vn    trade   vnso
     ## 6:         vn-re-exports-2016  annually      vn    trade   vnso
-    ##                  name date    value               properties
-    ## 1:      trade-balance 2016 -35962.0 {'currency' = 'vuv 000'}
-    ## 2:      balance-ratio 2016      0.1 {'currency' = 'vuv 000'}
-    ## 3: luganville-exports 2016   3940.0 {'currency' = 'vuv 000'}
-    ## 4:  port-vila-exports 2016   1506.0 {'currency' = 'vuv 000'}
-    ## 5:   combined-exports 2016   5446.0 {'currency' = 'vuv 000'}
-    ## 6:         re-exports 2016      0.0 {'currency' = 'vuv 000'}
+    ##                  name date    value                    properties
+    ## 1:      trade-balance 2016 -35962.0 {'currency' = 'million vatu'}
+    ## 2:      balance-ratio 2016      0.1 {'currency' = 'million vatu'}
+    ## 3: luganville-exports 2016   3940.0 {'currency' = 'million vatu'}
+    ## 4:  port-vila-exports 2016   1506.0 {'currency' = 'million vatu'}
+    ## 5:   combined-exports 2016   5446.0 {'currency' = 'million vatu'}
+    ## 6:         re-exports 2016      0.0 {'currency' = 'million vatu'}
 
 Where the the values are for annual frequency, update the date field if
 it only contains a year value. Make formatting of the date field
@@ -1145,13 +1145,13 @@ head(vn.imts.bot)
     ## 4:  vn-port-vila-exports-2016  annually      vn    trade   vnso
     ## 5:   vn-combined-exports-2016  annually      vn    trade   vnso
     ## 6:         vn-re-exports-2016  annually      vn    trade   vnso
-    ##                  name       date    value               properties
-    ## 1:      trade-balance 2016-12-01 -35962.0 {'currency' = 'vuv 000'}
-    ## 2:      balance-ratio 2016-12-01      0.1 {'currency' = 'vuv 000'}
-    ## 3: luganville-exports 2016-12-01   3940.0 {'currency' = 'vuv 000'}
-    ## 4:  port-vila-exports 2016-12-01   1506.0 {'currency' = 'vuv 000'}
-    ## 5:   combined-exports 2016-12-01   5446.0 {'currency' = 'vuv 000'}
-    ## 6:         re-exports 2016-12-01      0.0 {'currency' = 'vuv 000'}
+    ##                  name       date    value                    properties
+    ## 1:      trade-balance 2016-12-01 -35962.0 {'currency' = 'million vatu'}
+    ## 2:      balance-ratio 2016-12-01      0.1 {'currency' = 'million vatu'}
+    ## 3: luganville-exports 2016-12-01   3940.0 {'currency' = 'million vatu'}
+    ## 4:  port-vila-exports 2016-12-01   1506.0 {'currency' = 'million vatu'}
+    ## 5:   combined-exports 2016-12-01   5446.0 {'currency' = 'million vatu'}
+    ## 6:         re-exports 2016-12-01      0.0 {'currency' = 'million vatu'}
 
 # Read IMTS Balance of Trade Palau Data
 
@@ -1374,7 +1374,7 @@ pl.imts.bot[,
                   country = "pl", 
                   category = "trade", 
                   source = "imts", 
-                  properties = "{'currency' = 'usd 000'}",
+                  properties = "{'currency' = 'usd'}",
                   metric_key = paste0("pl","-",name,"-",date))]
 
 
@@ -1388,13 +1388,13 @@ head(pl.imts.bot)
     ## 4: exports-fob-domestic    223003 2018-04-01   monthly      pl    trade   imts
     ## 5: exports-fob-domestic    317412 2018-05-01   monthly      pl    trade   imts
     ## 6: exports-fob-domestic  288296.1 2018-06-01   monthly      pl    trade   imts
-    ##                  properties                         metric_key
-    ## 1: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-01-01
-    ## 2: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-02-01
-    ## 3: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-03-01
-    ## 4: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-04-01
-    ## 5: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-05-01
-    ## 6: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-06-01
+    ##              properties                         metric_key
+    ## 1: {'currency' = 'usd'} pl-exports-fob-domestic-2018-01-01
+    ## 2: {'currency' = 'usd'} pl-exports-fob-domestic-2018-02-01
+    ## 3: {'currency' = 'usd'} pl-exports-fob-domestic-2018-03-01
+    ## 4: {'currency' = 'usd'} pl-exports-fob-domestic-2018-04-01
+    ## 5: {'currency' = 'usd'} pl-exports-fob-domestic-2018-05-01
+    ## 6: {'currency' = 'usd'} pl-exports-fob-domestic-2018-06-01
 
 Reorder data.
 
@@ -1422,13 +1422,13 @@ head(pl.imts.bot)
     ## 4: pl-exports-fob-domestic-2018-04-01   monthly      pl    trade   imts
     ## 5: pl-exports-fob-domestic-2018-05-01   monthly      pl    trade   imts
     ## 6: pl-exports-fob-domestic-2018-06-01   monthly      pl    trade   imts
-    ##                    name       date     value               properties
-    ## 1: exports-fob-domestic 2018-01-01 680698.59 {'currency' = 'usd 000'}
-    ## 2: exports-fob-domestic 2018-02-01 278271.12 {'currency' = 'usd 000'}
-    ## 3: exports-fob-domestic 2018-03-01    353315 {'currency' = 'usd 000'}
-    ## 4: exports-fob-domestic 2018-04-01    223003 {'currency' = 'usd 000'}
-    ## 5: exports-fob-domestic 2018-05-01    317412 {'currency' = 'usd 000'}
-    ## 6: exports-fob-domestic 2018-06-01  288296.1 {'currency' = 'usd 000'}
+    ##                    name       date     value           properties
+    ## 1: exports-fob-domestic 2018-01-01 680698.59 {'currency' = 'usd'}
+    ## 2: exports-fob-domestic 2018-02-01 278271.12 {'currency' = 'usd'}
+    ## 3: exports-fob-domestic 2018-03-01    353315 {'currency' = 'usd'}
+    ## 4: exports-fob-domestic 2018-04-01    223003 {'currency' = 'usd'}
+    ## 5: exports-fob-domestic 2018-05-01    317412 {'currency' = 'usd'}
+    ## 6: exports-fob-domestic 2018-06-01  288296.1 {'currency' = 'usd'}
 
 # Read IMTS Balance of Trade Kiribati Data
 
@@ -1859,7 +1859,7 @@ count_recs7 <- dbFetch(rc7)
 #                         vn.imts.bot,
 #                         append = TRUE,
 #                         row.names = FALSE)
-
+# 
 
 # Count rows after upload
 rs8 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
@@ -2020,17 +2020,24 @@ country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM count
 tail(country_metrics)
 ```
 
-    ##                     metric_key frequency country category source          name
-    ## 1: ki-trade-balance-2019-07-01   monthly      ki    trade   imts trade-balance
-    ## 2: ki-trade-balance-2019-08-01   monthly      ki    trade   imts trade-balance
-    ## 3: ki-trade-balance-2019-09-01   monthly      ki    trade   imts trade-balance
-    ## 4: ki-trade-balance-2019-10-01   monthly      ki    trade   imts trade-balance
-    ## 5: ki-trade-balance-2019-11-01   monthly      ki    trade   imts trade-balance
-    ## 6: ki-trade-balance-2019-12-01   monthly      ki    trade   imts trade-balance
-    ##          date        value               properties
-    ## 1: 2019-07-01   -14239.733 {'currency' = 'aud 000'}
-    ## 2: 2019-08-01 -13452.04065 {'currency' = 'aud 000'}
-    ## 3: 2019-09-01 -13470.76348 {'currency' = 'aud 000'}
-    ## 4: 2019-10-01 -15435.80864 {'currency' = 'aud 000'}
-    ## 5: 2019-11-01 -11282.19025 {'currency' = 'aud 000'}
-    ## 6: 2019-12-01 -13355.90965 {'currency' = 'aud 000'}
+    ##                         metric_key frequency country category source
+    ## 1:         vn-total-exports-Dec-19   monthly      vn    trade   vnso
+    ## 2:    vn-luganville-imports-Dec-19   monthly      vn    trade   vnso
+    ## 3:     vn-port-vila-imports-Dec-19   monthly      vn    trade   vnso
+    ## 4:      vn-combined-imports-Dec-19   monthly      vn    trade   vnso
+    ## 5: vn-imports-for-reexports-Dec-19   monthly      vn    trade   vnso
+    ## 6:         vn-total-imports-Dec-19   monthly      vn    trade   vnso
+    ##                     name       date                  value
+    ## 1:         total-exports 2019-12-01  580.00000000000000000
+    ## 2:    luganville-imports 2019-12-01  652.00000000000000000
+    ## 3:     port-vila-imports 2019-12-01 3802.00000000000000000
+    ## 4:      combined-imports 2019-12-01 4454.00000000000000000
+    ## 5: imports-for-reexports 2019-12-01    0.00000000000000000
+    ## 6:         total-imports 2019-12-01 4454.00000000000000000
+    ##                       properties
+    ## 1: {'currency' = 'million vatu'}
+    ## 2: {'currency' = 'million vatu'}
+    ## 3: {'currency' = 'million vatu'}
+    ## 4: {'currency' = 'million vatu'}
+    ## 5: {'currency' = 'million vatu'}
+    ## 6: {'currency' = 'million vatu'}

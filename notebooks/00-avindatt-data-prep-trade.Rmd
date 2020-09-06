@@ -710,7 +710,7 @@ vn.imts.bot[,
 vn.imts.bot[, 
             `:=` (country = "vn", 
                   category = "trade", 
-                  properties = "{'currency' = 'vuv 000'}",
+                  properties = "{'currency' = 'million vatu'}",
                   metric_key = paste0("vn","-",name,"-",date))]
 
 
@@ -914,7 +914,7 @@ pl.imts.bot[,
                   country = "pl", 
                   category = "trade", 
                   source = "imts", 
-                  properties = "{'currency' = 'usd 000'}",
+                  properties = "{'currency' = 'usd'}",
                   metric_key = paste0("pl","-",name,"-",date))]
 
 
@@ -1277,7 +1277,7 @@ count_recs7 <- dbFetch(rc7)
 #                         vn.imts.bot,
 #                         append = TRUE,
 #                         row.names = FALSE)
-
+# 
 
 # Count rows after upload
 rs8 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
@@ -1440,4 +1440,3 @@ country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM count
 # Preview
 tail(country_metrics)
 ```
-
