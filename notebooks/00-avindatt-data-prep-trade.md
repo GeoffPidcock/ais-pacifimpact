@@ -11,6 +11,8 @@ into PostgreSQL database for the following countries:
   - Fiji
   - Cook Islands
   - Solomon Islands
+  - Kiribati
+  - Palau
 
 IMTS Data for Vanuatu and Samoa available via the SPC Statistics for
 Development Division do not meet the projects eligibility criteria. As
@@ -78,7 +80,7 @@ Read in Balance of Trade - All Items for Fiji.
 
 ``` r
 # Read in Fiji File 
-fj.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/external/Fiji_IMTS_Tables_2020.xlsx',
+fj.imts.bot <- read.xlsx(xlsxFile = './data/external/Fiji_IMTS_Tables_2020.xlsx',
                          sheet = 1, 
                          startRow = 28,
                          skipEmptyCols = TRUE,
@@ -372,7 +374,7 @@ Read in Balance of Trade - All Items for Cook Islands.
 
 ``` r
 # Read in Fiji File 
-ck.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/external/Cook_IMTS_Tables_2020.xlsx',
+ck.imts.bot <- read.xlsx(xlsxFile = './data/external/Cook_IMTS_Tables_2020.xlsx',
                          sheet = 1, 
                          startRow = 15,
                          skipEmptyCols = TRUE,
@@ -671,11 +673,11 @@ head(ck.imts.bot)
 
 # Read IMTS Balance of Trade Solomon Islands Data
 
-Read in Balance of Trade - All Items for Cook Islands.
+Read in Balance of Trade - All Items for Solomon Islands.
 
 ``` r
 # Read in Fiji File 
-sl.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/external/Solomon_Islands_IMTS_Tables_2020.xlsx',
+sl.imts.bot <- read.xlsx(xlsxFile = './data/external/Solomon_Islands_IMTS_Tables_2020.xlsx',
                          sheet = 1, 
                          startRow = 25,
                          skipEmptyCols = TRUE,
@@ -953,7 +955,7 @@ The process followed:
 
 ``` r
 # Read in Samoa File 
-ws.imts.bot <- fread('C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/interim/Samoa IMTS.csv')
+ws.imts.bot <- fread('./data/interim/Samoa IMTS.csv')
 
 
 head(ws.imts.bot)
@@ -1029,7 +1031,7 @@ The process followed:
 
 ``` r
 # Read in Vanuatu File 
-vn.imts.bot <- fread('C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/interim/Vanuatu IMTS cleaned.csv')
+vn.imts.bot <- fread('./data/interim/Vanuatu IMTS cleaned.csv')
 
 
 head(vn.imts.bot)
@@ -1150,6 +1152,569 @@ head(vn.imts.bot)
     ## 4:  port-vila-exports 2016-12-01   1506.0 {'currency' = 'vuv 000'}
     ## 5:   combined-exports 2016-12-01   5446.0 {'currency' = 'vuv 000'}
     ## 6:         re-exports 2016-12-01      0.0 {'currency' = 'vuv 000'}
+
+# Read IMTS Balance of Trade Palau Data
+
+Read in Balance of Trade - All Items for Palau.
+
+``` r
+# Read in Fiji File 
+pl.imts.bot <- read.xlsx(xlsxFile = './data/external/Palau_IMTS_Tables_2020_.xlsx',
+                         sheet = 1, 
+                         startRow = 8,
+                         skipEmptyCols = TRUE,
+                         detectDates = TRUE,
+                         rows = c(8:34),
+                         cols = c(1:7))
+
+head(pl.imts.bot)
+```
+
+    ##   Monthly        X2       X3  X4       X5       X6        X7
+    ## 1  2018.0   January 680698.6 n/a 680698.6  9016884  -8336185
+    ## 2    <NA> February  278271.1 n/a 278271.1 13527780 -13249509
+    ## 3    <NA>     March 353315.0 n/a 353315.0 17111059 -16757744
+    ## 4    <NA>     April 223003.0 n/a 223003.0 14258575 -14035572
+    ## 5    <NA>      May  317412.0 n/a 317412.0 16048618 -15731206
+    ## 6    <NA>      June 288296.1 n/a 288296.1 14540280 -14251984
+
+Add and fix missing variable names.
+
+``` r
+# pl.imts.bot to data.table 
+pl.imts.bot <- data.table(pl.imts.bot)
+
+
+# Fix Monthly label to Year
+setnames(pl.imts.bot, 
+         "Monthly",
+         "year")
+
+
+# X2 should be Month 
+setnames(pl.imts.bot, 
+         "X2",
+         "month")
+
+
+# Exports FOB Domestic 
+setnames(pl.imts.bot, 
+         "X3",
+         "exports-fob-domestic")
+
+
+# Exports FOB Re-Export 
+setnames(pl.imts.bot, 
+         "X4",
+         "exports-fob-reexport")
+
+
+# Exports FOB Total 
+setnames(pl.imts.bot, 
+         "X5",
+         "exports-fob-total")
+
+
+# Imports CIF
+setnames(pl.imts.bot, 
+         "X6",
+         "imports-cif")
+
+
+
+# Trade Balance
+setnames(pl.imts.bot, 
+         "X7",
+         "trade-balance")
+
+
+head(pl.imts.bot)
+```
+
+    ##      year     month exports-fob-domestic exports-fob-reexport exports-fob-total
+    ## 1: 2018.0   January             680698.6                  n/a          680698.6
+    ## 2:   <NA> February              278271.1                  n/a          278271.1
+    ## 3:   <NA>     March             353315.0                  n/a          353315.0
+    ## 4:   <NA>     April             223003.0                  n/a          223003.0
+    ## 5:   <NA>      May              317412.0                  n/a          317412.0
+    ## 6:   <NA>      June             288296.1                  n/a          288296.1
+    ##    imports-cif trade-balance
+    ## 1:     9016884      -8336185
+    ## 2:    13527780     -13249509
+    ## 3:    17111059     -16757744
+    ## 4:    14258575     -14035572
+    ## 5:    16048618     -15731206
+    ## 6:    14540280     -14251984
+
+Update Year values.
+
+``` r
+# Update by using row number references
+# 2014
+pl.imts.bot[1:12, 
+            year := 2018]
+
+
+# 2015
+pl.imts.bot[13:24, 
+            year := 2019]
+
+
+head(pl.imts.bot)
+```
+
+    ##    year     month exports-fob-domestic exports-fob-reexport exports-fob-total
+    ## 1: 2018   January             680698.6                  n/a          680698.6
+    ## 2: 2018 February              278271.1                  n/a          278271.1
+    ## 3: 2018     March             353315.0                  n/a          353315.0
+    ## 4: 2018     April             223003.0                  n/a          223003.0
+    ## 5: 2018      May              317412.0                  n/a          317412.0
+    ## 6: 2018      June             288296.1                  n/a          288296.1
+    ##    imports-cif trade-balance
+    ## 1:     9016884      -8336185
+    ## 2:    13527780     -13249509
+    ## 3:    17111059     -16757744
+    ## 4:    14258575     -14035572
+    ## 5:    16048618     -15731206
+    ## 6:    14540280     -14251984
+
+Melt the table to adhere to the key-value pair schema design.
+
+``` r
+# Melt the data to adhere to the schema design
+pl.imts.bot <- melt.data.table(pl.imts.bot,
+                               id = c("year",
+                                      "month"), measure = c("exports-fob-domestic",
+                                                            "exports-fob-reexport", 
+                                                            "exports-fob-total",
+                                                            "imports-cif",
+                                                            "trade-balance"))
+```
+
+    ## Warning in melt.data.table(pl.imts.bot, id = c("year", "month"), measure =
+    ## c("exports-fob-domestic", : 'measure.vars' [exports-fob-domestic, exports-fob-
+    ## reexport, exports-fob-total, imports-cif, trade-balance] are not all of the
+    ## same type. By order of hierarchy, the molten data value column will be of type
+    ## 'character'. All measure variables not of type 'character' will be coerced too.
+    ## Check DETAILS in ?melt.data.table for more on coercion.
+
+``` r
+head(pl.imts.bot)
+```
+
+    ##    year     month             variable     value
+    ## 1: 2018   January exports-fob-domestic 680698.59
+    ## 2: 2018 February  exports-fob-domestic 278271.12
+    ## 3: 2018     March exports-fob-domestic    353315
+    ## 4: 2018     April exports-fob-domestic    223003
+    ## 5: 2018      May  exports-fob-domestic    317412
+    ## 6: 2018      June exports-fob-domestic  288296.1
+
+Create Date from year and month.
+
+``` r
+# Concatenate
+pl.imts.bot[, 
+            date := paste0(gsub(" ", "", year, fixed = TRUE),
+                           "-",
+                           gsub(" ", "",month, fixed = TRUE),
+                           "-",
+                           "01")]
+
+
+# Format Date
+pl.imts.bot[, 
+            date := as.Date(date, format = "%Y-%B-%d")]
+
+
+# Remove year and month fields 
+pl.imts.bot[, 
+            year := NULL][, 
+                          month := NULL]
+
+
+head(pl.imts.bot)
+```
+
+    ##                variable     value       date
+    ## 1: exports-fob-domestic 680698.59 2018-01-01
+    ## 2: exports-fob-domestic 278271.12 2018-02-01
+    ## 3: exports-fob-domestic    353315 2018-03-01
+    ## 4: exports-fob-domestic    223003 2018-04-01
+    ## 5: exports-fob-domestic    317412 2018-05-01
+    ## 6: exports-fob-domestic  288296.1 2018-06-01
+
+Rename “variable” to “name”.
+
+``` r
+# Rename variable to name 
+setnames(pl.imts.bot, 
+         "variable",
+         "name")
+
+
+head(pl.imts.bot)
+```
+
+    ##                    name     value       date
+    ## 1: exports-fob-domestic 680698.59 2018-01-01
+    ## 2: exports-fob-domestic 278271.12 2018-02-01
+    ## 3: exports-fob-domestic    353315 2018-03-01
+    ## 4: exports-fob-domestic    223003 2018-04-01
+    ## 5: exports-fob-domestic    317412 2018-05-01
+    ## 6: exports-fob-domestic  288296.1 2018-06-01
+
+Add metric key, frequency, country, category, source and property
+informations.
+
+``` r
+# Metric 
+pl.imts.bot[, 
+            `:=` (frequency = "monthly", 
+                  country = "pl", 
+                  category = "trade", 
+                  source = "imts", 
+                  properties = "{'currency' = 'usd 000'}",
+                  metric_key = paste0("pl","-",name,"-",date))]
+
+
+head(pl.imts.bot)
+```
+
+    ##                    name     value       date frequency country category source
+    ## 1: exports-fob-domestic 680698.59 2018-01-01   monthly      pl    trade   imts
+    ## 2: exports-fob-domestic 278271.12 2018-02-01   monthly      pl    trade   imts
+    ## 3: exports-fob-domestic    353315 2018-03-01   monthly      pl    trade   imts
+    ## 4: exports-fob-domestic    223003 2018-04-01   monthly      pl    trade   imts
+    ## 5: exports-fob-domestic    317412 2018-05-01   monthly      pl    trade   imts
+    ## 6: exports-fob-domestic  288296.1 2018-06-01   monthly      pl    trade   imts
+    ##                  properties                         metric_key
+    ## 1: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-01-01
+    ## 2: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-02-01
+    ## 3: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-03-01
+    ## 4: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-04-01
+    ## 5: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-05-01
+    ## 6: {'currency' = 'usd 000'} pl-exports-fob-domestic-2018-06-01
+
+Reorder data.
+
+``` r
+# Change order of columns to align with schema
+pl.imts.bot <- pl.imts.bot[,
+                           .(metric_key,
+                             frequency, 
+                             country,
+                             category, 
+                             source,
+                             name,
+                             date, 
+                             value,
+                             properties)]
+
+
+head(pl.imts.bot)
+```
+
+    ##                            metric_key frequency country category source
+    ## 1: pl-exports-fob-domestic-2018-01-01   monthly      pl    trade   imts
+    ## 2: pl-exports-fob-domestic-2018-02-01   monthly      pl    trade   imts
+    ## 3: pl-exports-fob-domestic-2018-03-01   monthly      pl    trade   imts
+    ## 4: pl-exports-fob-domestic-2018-04-01   monthly      pl    trade   imts
+    ## 5: pl-exports-fob-domestic-2018-05-01   monthly      pl    trade   imts
+    ## 6: pl-exports-fob-domestic-2018-06-01   monthly      pl    trade   imts
+    ##                    name       date     value               properties
+    ## 1: exports-fob-domestic 2018-01-01 680698.59 {'currency' = 'usd 000'}
+    ## 2: exports-fob-domestic 2018-02-01 278271.12 {'currency' = 'usd 000'}
+    ## 3: exports-fob-domestic 2018-03-01    353315 {'currency' = 'usd 000'}
+    ## 4: exports-fob-domestic 2018-04-01    223003 {'currency' = 'usd 000'}
+    ## 5: exports-fob-domestic 2018-05-01    317412 {'currency' = 'usd 000'}
+    ## 6: exports-fob-domestic 2018-06-01  288296.1 {'currency' = 'usd 000'}
+
+# Read IMTS Balance of Trade Kiribati Data
+
+Read in Balance of Trade - All Items for Kiribati
+
+``` r
+# Read in Kiribati File 
+ki.imts.bot <- read.xlsx(xlsxFile = './data/external/Kiribati_IMTS_Tables_2020.xlsx',
+                         sheet = 1, 
+                         startRow = 14,
+                         skipEmptyCols = TRUE,
+                         detectDates = TRUE,
+                         rows = c(14:67),
+                         cols = c(1:7))
+
+
+head(ki.imts.bot)
+```
+
+    ##   Monthly       X2                 X3        X4         X5       X6        X7
+    ## 1    2016  January 1859.5960000000002   8.15420 1867.75020 14488.23 -12620.48
+    ## 2      NA February 15.651199999999998  76.00935   91.66055 12139.84 -12048.17
+    ## 3      NA    March            208.036  31.88060  239.91660 15219.95 -14980.03
+    ## 4      NA    April  670.9549999999999  10.93100  681.88600 12813.96 -12132.07
+    ## 5      NA      May 207.89599999999996  20.66900  228.56500 15843.96 -15615.40
+    ## 6      NA     June 502.08099999999996 381.93280  884.01380 16768.72 -15884.71
+
+Add and fix missing variable names.
+
+``` r
+# ki.imts.bot to data.table 
+ki.imts.bot <- data.table(ki.imts.bot)
+
+
+# Remove empty record
+ki.imts.bot <- ki.imts.bot[!is.na(X2)]
+
+
+
+# Fix Monthly label to Year
+setnames(ki.imts.bot, 
+         "Monthly",
+         "year")
+
+
+# X2 should be Month 
+setnames(ki.imts.bot, 
+         "X2",
+         "month")
+
+
+# Exports FOB Domestic 
+setnames(ki.imts.bot, 
+         "X3",
+         "exports-fob-domestic")
+
+
+# Exports FOB Re-Export 
+setnames(ki.imts.bot, 
+         "X4",
+         "exports-fob-reexport")
+
+
+# Exports FOB Total 
+setnames(ki.imts.bot, 
+         "X5",
+         "exports-fob-total")
+
+
+# Imports CIF
+setnames(ki.imts.bot, 
+         "X6",
+         "imports-cif")
+
+
+
+# Trade Balance
+setnames(ki.imts.bot, 
+         "X7",
+         "trade-balance")
+
+
+head(ki.imts.bot)
+```
+
+    ##    year    month exports-fob-domestic exports-fob-reexport exports-fob-total
+    ## 1: 2016  January   1859.5960000000002              8.15420        1867.75020
+    ## 2:   NA February   15.651199999999998             76.00935          91.66055
+    ## 3:   NA    March              208.036             31.88060         239.91660
+    ## 4:   NA    April    670.9549999999999             10.93100         681.88600
+    ## 5:   NA      May   207.89599999999996             20.66900         228.56500
+    ## 6:   NA     June   502.08099999999996            381.93280         884.01380
+    ##    imports-cif trade-balance
+    ## 1:    14488.23     -12620.48
+    ## 2:    12139.84     -12048.17
+    ## 3:    15219.95     -14980.03
+    ## 4:    12813.96     -12132.07
+    ## 5:    15843.96     -15615.40
+    ## 6:    16768.72     -15884.71
+
+Update Year values.
+
+``` r
+# Update by using row number references
+# 2014
+ki.imts.bot[1:12, 
+            year := 2016]
+
+
+# 2015
+ki.imts.bot[13:24, 
+            year := 2017]
+
+
+# 2016
+ki.imts.bot[25:36, 
+            year := 2018]
+
+
+# 2017
+ki.imts.bot[37:48, 
+            year := 2019]
+
+
+head(C)
+```
+
+    ##                                                                              
+    ## 1 function (object, contr, how.many, ...)                                    
+    ## 2 {                                                                          
+    ## 3     if (isFALSE(as.logical(Sys.getenv("_R_OPTIONS_STRINGS_AS_FACTORS_")))) 
+    ## 4         object <- as.factor(object)                                        
+    ## 5     if (!nlevels(object))                                                  
+    ## 6         stop("object not interpretable as a factor")
+
+Melt the table to adhere to the key-value pair schema design.
+
+``` r
+# Melt the data to adhere to the schema design
+ki.imts.bot <- melt.data.table(ki.imts.bot,
+                               id = c("year",
+                                      "month"), measure = c("exports-fob-domestic",
+                                                            "exports-fob-reexport", 
+                                                            "exports-fob-total",
+                                                            "imports-cif",
+                                                            "trade-balance"))
+```
+
+    ## Warning in melt.data.table(ki.imts.bot, id = c("year", "month"), measure =
+    ## c("exports-fob-domestic", : 'measure.vars' [exports-fob-domestic, exports-fob-
+    ## reexport, exports-fob-total, imports-cif, trade-balance] are not all of the
+    ## same type. By order of hierarchy, the molten data value column will be of type
+    ## 'character'. All measure variables not of type 'character' will be coerced too.
+    ## Check DETAILS in ?melt.data.table for more on coercion.
+
+``` r
+head(ki.imts.bot)
+```
+
+    ##    year    month             variable              value
+    ## 1: 2016  January exports-fob-domestic 1859.5960000000002
+    ## 2: 2016 February exports-fob-domestic 15.651199999999998
+    ## 3: 2016    March exports-fob-domestic            208.036
+    ## 4: 2016    April exports-fob-domestic  670.9549999999999
+    ## 5: 2016      May exports-fob-domestic 207.89599999999996
+    ## 6: 2016     June exports-fob-domestic 502.08099999999996
+
+Create Date from year and month.
+
+``` r
+# Concatenate
+ki.imts.bot[, 
+            date := paste0(gsub(" ", "", year, fixed = TRUE),
+                           "-",
+                           gsub(" ", "",month, fixed = TRUE),
+                           "-",
+                           "01")]
+
+
+# Format Date
+ki.imts.bot[, 
+            date := as.Date(date, format = "%Y-%B-%d")]
+
+
+# Remove year and month fields 
+ki.imts.bot[, 
+            year := NULL][, 
+                          month := NULL]
+
+
+head(ki.imts.bot)
+```
+
+    ##                variable              value       date
+    ## 1: exports-fob-domestic 1859.5960000000002 2016-01-01
+    ## 2: exports-fob-domestic 15.651199999999998 2016-02-01
+    ## 3: exports-fob-domestic            208.036 2016-03-01
+    ## 4: exports-fob-domestic  670.9549999999999 2016-04-01
+    ## 5: exports-fob-domestic 207.89599999999996 2016-05-01
+    ## 6: exports-fob-domestic 502.08099999999996 2016-06-01
+
+Rename “variable” to “name”.
+
+``` r
+# Rename variable to name 
+setnames(ki.imts.bot, 
+         "variable",
+         "name")
+
+
+head(ki.imts.bot)
+```
+
+    ##                    name              value       date
+    ## 1: exports-fob-domestic 1859.5960000000002 2016-01-01
+    ## 2: exports-fob-domestic 15.651199999999998 2016-02-01
+    ## 3: exports-fob-domestic            208.036 2016-03-01
+    ## 4: exports-fob-domestic  670.9549999999999 2016-04-01
+    ## 5: exports-fob-domestic 207.89599999999996 2016-05-01
+    ## 6: exports-fob-domestic 502.08099999999996 2016-06-01
+
+Add metric key, frequency, country, category, source and property
+informations.
+
+``` r
+# Metric 
+ki.imts.bot[, 
+            `:=` (frequency = "monthly", 
+                  country = "ki", 
+                  category = "trade", 
+                  source = "imts", 
+                  properties = "{'currency' = 'aud 000'}",
+                  metric_key = paste0("ki","-",name,"-",date))]
+
+
+head(ki.imts.bot)
+```
+
+    ##                    name              value       date frequency country
+    ## 1: exports-fob-domestic 1859.5960000000002 2016-01-01   monthly      ki
+    ## 2: exports-fob-domestic 15.651199999999998 2016-02-01   monthly      ki
+    ## 3: exports-fob-domestic            208.036 2016-03-01   monthly      ki
+    ## 4: exports-fob-domestic  670.9549999999999 2016-04-01   monthly      ki
+    ## 5: exports-fob-domestic 207.89599999999996 2016-05-01   monthly      ki
+    ## 6: exports-fob-domestic 502.08099999999996 2016-06-01   monthly      ki
+    ##    category source               properties                         metric_key
+    ## 1:    trade   imts {'currency' = 'aud 000'} ki-exports-fob-domestic-2016-01-01
+    ## 2:    trade   imts {'currency' = 'aud 000'} ki-exports-fob-domestic-2016-02-01
+    ## 3:    trade   imts {'currency' = 'aud 000'} ki-exports-fob-domestic-2016-03-01
+    ## 4:    trade   imts {'currency' = 'aud 000'} ki-exports-fob-domestic-2016-04-01
+    ## 5:    trade   imts {'currency' = 'aud 000'} ki-exports-fob-domestic-2016-05-01
+    ## 6:    trade   imts {'currency' = 'aud 000'} ki-exports-fob-domestic-2016-06-01
+
+Reorder data.
+
+``` r
+# Change order of columns to align with schema
+ki.imts.bot <- ki.imts.bot[,
+                           .(metric_key,
+                             frequency, 
+                             country,
+                             category, 
+                             source,
+                             name,
+                             date, 
+                             value,
+                             properties)]
+
+
+head(ki.imts.bot)
+```
+
+    ##                            metric_key frequency country category source
+    ## 1: ki-exports-fob-domestic-2016-01-01   monthly      ki    trade   imts
+    ## 2: ki-exports-fob-domestic-2016-02-01   monthly      ki    trade   imts
+    ## 3: ki-exports-fob-domestic-2016-03-01   monthly      ki    trade   imts
+    ## 4: ki-exports-fob-domestic-2016-04-01   monthly      ki    trade   imts
+    ## 5: ki-exports-fob-domestic-2016-05-01   monthly      ki    trade   imts
+    ## 6: ki-exports-fob-domestic-2016-06-01   monthly      ki    trade   imts
+    ##                    name       date              value               properties
+    ## 1: exports-fob-domestic 2016-01-01 1859.5960000000002 {'currency' = 'aud 000'}
+    ## 2: exports-fob-domestic 2016-02-01 15.651199999999998 {'currency' = 'aud 000'}
+    ## 3: exports-fob-domestic 2016-03-01            208.036 {'currency' = 'aud 000'}
+    ## 4: exports-fob-domestic 2016-04-01  670.9549999999999 {'currency' = 'aud 000'}
+    ## 5: exports-fob-domestic 2016-05-01 207.89599999999996 {'currency' = 'aud 000'}
+    ## 6: exports-fob-domestic 2016-06-01 502.08099999999996 {'currency' = 'aud 000'}
 
 # Append to PostgresSQL Database
 
@@ -1343,6 +1908,80 @@ count_recs10 <- dbFetch(rs10)
 dbDisconnect(db.con)
 ```
 
+## Palau IMTS Balance of Trade Upload
+
+``` r
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+rc11 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs11 <- dbFetch(rc11)
+
+
+# # Append pl.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics",
+#                         pl.imts.bot,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs12 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs12 <- dbFetch(rs12)
+
+
+dbDisconnect(db.con)
+```
+
+## Kiribati IMTS Balance of Trade Upload
+
+``` r
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+rc13 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs13 <- dbFetch(rc13)
+
+
+# # Append ki.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics",
+#                         ki.imts.bot,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs14 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs14 <- dbFetch(rs14)
+
+
+dbDisconnect(db.con)
+```
+
 ## Clean up
 
 Remove temp variables used to test.
@@ -1381,17 +2020,17 @@ country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM count
 tail(country_metrics)
 ```
 
-    ##                    metric_key frequency country category source          name
-    ## 1: ws-total-exports-1/05/2020   monthly      ws    trade    sbs total-exports
-    ## 2: ws-total-imports-1/05/2020   monthly      ws    trade    sbs total-imports
-    ## 3: ws-trade-balance-1/05/2020   monthly      ws    trade    sbs trade-balance
-    ## 4: ws-total-exports-1/06/2020   monthly      ws    trade    sbs total-exports
-    ## 5: ws-total-imports-1/06/2020   monthly      ws    trade    sbs total-imports
-    ## 6: ws-trade-balance-1/06/2020   monthly      ws    trade    sbs trade-balance
-    ##         date  value               properties
-    ## 1: 1/05/2020   7924 {'currency' = 'wst 000'}
-    ## 2: 1/05/2020  53370 {'currency' = 'wst 000'}
-    ## 3: 1/05/2020 -45446 {'currency' = 'wst 000'}
-    ## 4: 1/06/2020   7882 {'currency' = 'wst 000'}
-    ## 5: 1/06/2020  59226 {'currency' = 'wst 000'}
-    ## 6: 1/06/2020 -51344 {'currency' = 'wst 000'}
+    ##                     metric_key frequency country category source          name
+    ## 1: ki-trade-balance-2019-07-01   monthly      ki    trade   imts trade-balance
+    ## 2: ki-trade-balance-2019-08-01   monthly      ki    trade   imts trade-balance
+    ## 3: ki-trade-balance-2019-09-01   monthly      ki    trade   imts trade-balance
+    ## 4: ki-trade-balance-2019-10-01   monthly      ki    trade   imts trade-balance
+    ## 5: ki-trade-balance-2019-11-01   monthly      ki    trade   imts trade-balance
+    ## 6: ki-trade-balance-2019-12-01   monthly      ki    trade   imts trade-balance
+    ##          date        value               properties
+    ## 1: 2019-07-01   -14239.733 {'currency' = 'aud 000'}
+    ## 2: 2019-08-01 -13452.04065 {'currency' = 'aud 000'}
+    ## 3: 2019-09-01 -13470.76348 {'currency' = 'aud 000'}
+    ## 4: 2019-10-01 -15435.80864 {'currency' = 'aud 000'}
+    ## 5: 2019-11-01 -11282.19025 {'currency' = 'aud 000'}
+    ## 6: 2019-12-01 -13355.90965 {'currency' = 'aud 000'}
