@@ -1,0 +1,81 @@
+---
+title: "Data Prep - Cook Islands AIS"
+author: "Avin Datt - PacifImpact"
+date: "04 September 2020"
+output: 
+  github_document
+---
+
+# Scope 
+
+AIS data was acquired via UNGP but due to the fact cluster resources were scarce, AIS data had to be extracted from Spark and then stored in a database for the wider PacifImpact team to access. 
+
+# Load Libraries
+
+```{r load libs}
+# Load data.table library
+if (!require(data.table)) {
+  install.packages("data.table")
+  library(data.table)
+}
+
+# Load DBI library
+if (!require(DBI)) {
+  install.packages("DBI")
+  library(DBI)
+}
+
+# Load DBI library
+if (!require(RPostgres)) {
+  install.packages("RPostgres")
+  library(RPostgres)
+}
+
+```
+
+# Read AIS Cook Islands.
+
+Read the files extracted from UNGP for Cook Islands. 
+
+```{r}
+# Cook Islands. files
+file.list <- list.files(path = "./data/external/ais_ck/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+cklist.list <- lapply(paste0("./data/external/ais_ck/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+cklist.list <- rbindlist(cklist.list)
+
+
+head(cklist.list)
+```
+
+# Write AIS Cook Islands. to PostgreSQL
+
+```{r eval=FALSE}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# # Append cklist.list to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "stg_ais",
+#                         cklist.list,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+rm(cklist.list)
+
+```
