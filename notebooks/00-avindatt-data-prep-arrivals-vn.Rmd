@@ -1,0 +1,173 @@
+---
+title: "Data Prep - Vanuatu Visitor Arrivals"
+author: "Avin Datt - PacifImpact"
+date: "03 September 2020"
+output: 
+  github_document
+---
+
+# Load Libraries 
+
+```{r load libs}
+# Load data.table library
+if (!require(data.table)) {
+  install.packages("data.table")
+  library(data.table)
+}
+
+# Load DBI library
+if (!require(DBI)) {
+  install.packages("DBI")
+  library(DBI)
+}
+
+# Load DBI library
+if (!require(RPostgres)) {
+  install.packages("RPostgres")
+  library(RPostgres)
+}
+
+# Load openxlsx library 
+if (!require(openxlsx)) {
+  install.packages("openxlsx")
+  library(openxlsx)
+}
+
+
+```
+
+# Read Vanuatu Arrivals Data 
+
+```{r}
+# Read in Fiji File 
+vn.arrivals <- read.xlsx(xlsxFile = './data/interim/vanuatu-arrivals.xlsx',
+                         sheet = 1)
+
+head(vn.arrivals)
+```
+
+Melt the table to adhere to the key-value pair schema design. 
+
+```{r}
+# Melt the data to adhere to the schema design
+vn.arrivals <- data.table(vn.arrivals)
+
+
+vn.arrivals <- melt.data.table(vn.arrivals,
+                               id = c("year",
+                                      "month"), measure = c("total-visitors"))
+
+head(vn.arrivals)
+```
+
+
+Create Date from year and month. 
+
+```{r}
+# Concatenate
+vn.arrivals[, 
+            date := paste0(gsub(" ", "", year, fixed = TRUE),
+                           "-",
+                           gsub(" ", "",month, fixed = TRUE),
+                           "-",
+                           "01")]
+
+
+# Format Date
+vn.arrivals[, 
+            date := as.Date(date, format = "%Y-%B-%d")]
+
+
+# Remove year and month fields 
+vn.arrivals[, 
+            year := NULL][, 
+                          month := NULL]
+
+
+head(vn.arrivals)
+```
+
+Rename "variable" to "name". 
+
+```{r}
+# Rename variable to name 
+setnames(vn.arrivals, 
+         "variable",
+         "name")
+
+
+head(vn.arrivals)
+```
+
+Add metric key, frequency, country, category, source and property informations. 
+
+```{r}
+# Metric 
+vn.arrivals[, 
+            `:=` (frequency = "monthly", 
+                  country = "vn", 
+                  category = "tourism", 
+                  source = "vnso", 
+                  properties = "",
+                  metric_key = paste0("vn","-",name,"-",date))]
+
+
+head(vn.arrivals)
+```
+
+Reorder data. 
+
+```{r}
+# Change order of columns to align with schema
+vn.arrivals <- vn.arrivals[,
+                           .(metric_key,
+                             frequency, 
+                             country,
+                             category, 
+                             source,
+                             name,
+                             date, 
+                             value,
+                             properties)]
+
+
+head(vn.arrivals)
+```
+
+# Write Arrivals to Database
+
+```{r eval=FALSE}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+rc1 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs1 <- dbFetch(rc1)
+
+
+# # Append vn.arrivals to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics",
+#                         vn.arrivals,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs2 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs2 <- dbFetch(rs2)
+
+
+dbDisconnect(db.con)
+
+```
