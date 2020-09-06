@@ -13,6 +13,8 @@ Ingest IMTS Data available from SPC Statistics for Development Division into Pos
 - Fiji 
 - Cook Islands 
 - Solomon Islands
+- Kiribati 
+- Palau
 
 IMTS Data for Vanuatu and Samoa available via the SPC Statistics for Development Division do not meet the projects eligibility criteria. As such, their appropriate trade data will be gathered from alternate sources, referenced below. 
 
@@ -59,7 +61,7 @@ Read in Balance of Trade - All Items for Fiji.
 
 ```{r}
 # Read in Fiji File 
-fj.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/external/Fiji_IMTS_Tables_2020.xlsx',
+fj.imts.bot <- read.xlsx(xlsxFile = './data/external/Fiji_IMTS_Tables_2020.xlsx',
                          sheet = 1, 
                          startRow = 28,
                          skipEmptyCols = TRUE,
@@ -260,7 +262,7 @@ Read in Balance of Trade - All Items for Cook Islands.
 
 ```{r}
 # Read in Fiji File 
-ck.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/external/Cook_IMTS_Tables_2020.xlsx',
+ck.imts.bot <- read.xlsx(xlsxFile = './data/external/Cook_IMTS_Tables_2020.xlsx',
                          sheet = 1, 
                          startRow = 15,
                          skipEmptyCols = TRUE,
@@ -453,11 +455,11 @@ head(ck.imts.bot)
 
 # Read IMTS Balance of Trade Solomon Islands Data 
 
-Read in Balance of Trade - All Items for Cook Islands.
+Read in Balance of Trade - All Items for Solomon Islands.
 
 ```{r}
 # Read in Fiji File 
-sl.imts.bot <- read.xlsx(xlsxFile = 'C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/external/Solomon_Islands_IMTS_Tables_2020.xlsx',
+sl.imts.bot <- read.xlsx(xlsxFile = './data/external/Solomon_Islands_IMTS_Tables_2020.xlsx',
                          sheet = 1, 
                          startRow = 25,
                          skipEmptyCols = TRUE,
@@ -639,7 +641,7 @@ The process followed:
 
 ```{r}
 # Read in Samoa File 
-ws.imts.bot <- fread('C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/interim/Samoa IMTS.csv')
+ws.imts.bot <- fread('./data/interim/Samoa IMTS.csv')
 
 
 head(ws.imts.bot)
@@ -688,7 +690,7 @@ The process followed:
 
 ```{r}
 # Read in Vanuatu File 
-vn.imts.bot <- fread('C:/Users/Avin/Documents/Data/Hackathon/AIS/ais-pacifimpact/data/interim/Vanuatu IMTS cleaned.csv')
+vn.imts.bot <- fread('./data/interim/Vanuatu IMTS cleaned.csv')
 
 
 head(vn.imts.bot)
@@ -761,6 +763,376 @@ rm(vn.imts.bot.a,
 
 head(vn.imts.bot)
 ```
+
+# Read IMTS Balance of Trade Palau Data 
+
+Read in Balance of Trade - All Items for Palau.
+
+```{r}
+# Read in Fiji File 
+pl.imts.bot <- read.xlsx(xlsxFile = './data/external/Palau_IMTS_Tables_2020_.xlsx',
+                         sheet = 1, 
+                         startRow = 8,
+                         skipEmptyCols = TRUE,
+                         detectDates = TRUE,
+                         rows = c(8:34),
+                         cols = c(1:7))
+
+head(pl.imts.bot)
+```
+
+Add and fix missing variable names. 
+
+```{r}
+# pl.imts.bot to data.table 
+pl.imts.bot <- data.table(pl.imts.bot)
+
+
+# Fix Monthly label to Year
+setnames(pl.imts.bot, 
+         "Monthly",
+         "year")
+
+
+# X2 should be Month 
+setnames(pl.imts.bot, 
+         "X2",
+         "month")
+
+
+# Exports FOB Domestic 
+setnames(pl.imts.bot, 
+         "X3",
+         "exports-fob-domestic")
+
+
+# Exports FOB Re-Export 
+setnames(pl.imts.bot, 
+         "X4",
+         "exports-fob-reexport")
+
+
+# Exports FOB Total 
+setnames(pl.imts.bot, 
+         "X5",
+         "exports-fob-total")
+
+
+# Imports CIF
+setnames(pl.imts.bot, 
+         "X6",
+         "imports-cif")
+
+
+
+# Trade Balance
+setnames(pl.imts.bot, 
+         "X7",
+         "trade-balance")
+
+
+head(pl.imts.bot)
+```
+
+Update Year values.
+
+```{r}
+# Update by using row number references
+# 2014
+pl.imts.bot[1:12, 
+            year := 2018]
+
+
+# 2015
+pl.imts.bot[13:24, 
+            year := 2019]
+
+
+head(pl.imts.bot)
+```
+
+Melt the table to adhere to the key-value pair schema design. 
+
+```{r}
+# Melt the data to adhere to the schema design
+pl.imts.bot <- melt.data.table(pl.imts.bot,
+                               id = c("year",
+                                      "month"), measure = c("exports-fob-domestic",
+                                                            "exports-fob-reexport", 
+                                                            "exports-fob-total",
+                                                            "imports-cif",
+                                                            "trade-balance"))
+
+
+head(pl.imts.bot)
+```
+
+Create Date from year and month. 
+
+```{r}
+# Concatenate
+pl.imts.bot[, 
+            date := paste0(gsub(" ", "", year, fixed = TRUE),
+                           "-",
+                           gsub(" ", "",month, fixed = TRUE),
+                           "-",
+                           "01")]
+
+
+# Format Date
+pl.imts.bot[, 
+            date := as.Date(date, format = "%Y-%B-%d")]
+
+
+# Remove year and month fields 
+pl.imts.bot[, 
+            year := NULL][, 
+                          month := NULL]
+
+
+head(pl.imts.bot)
+```
+
+Rename "variable" to "name". 
+
+```{r}
+# Rename variable to name 
+setnames(pl.imts.bot, 
+         "variable",
+         "name")
+
+
+head(pl.imts.bot)
+```
+
+Add metric key, frequency, country, category, source and property informations. 
+
+```{r}
+# Metric 
+pl.imts.bot[, 
+            `:=` (frequency = "monthly", 
+                  country = "pl", 
+                  category = "trade", 
+                  source = "imts", 
+                  properties = "{'currency' = 'usd 000'}",
+                  metric_key = paste0("pl","-",name,"-",date))]
+
+
+head(pl.imts.bot)
+```
+
+Reorder data. 
+
+```{r}
+# Change order of columns to align with schema
+pl.imts.bot <- pl.imts.bot[,
+                           .(metric_key,
+                             frequency, 
+                             country,
+                             category, 
+                             source,
+                             name,
+                             date, 
+                             value,
+                             properties)]
+
+
+head(pl.imts.bot)
+```
+
+# Read IMTS Balance of Trade Kiribati Data
+
+Read in Balance of Trade - All Items for Kiribati
+
+```{r}
+# Read in Kiribati File 
+ki.imts.bot <- read.xlsx(xlsxFile = './data/external/Kiribati_IMTS_Tables_2020.xlsx',
+                         sheet = 1, 
+                         startRow = 14,
+                         skipEmptyCols = TRUE,
+                         detectDates = TRUE,
+                         rows = c(14:67),
+                         cols = c(1:7))
+
+
+head(ki.imts.bot)
+```
+
+Add and fix missing variable names. 
+
+```{r}
+# ki.imts.bot to data.table 
+ki.imts.bot <- data.table(ki.imts.bot)
+
+
+# Remove empty record
+ki.imts.bot <- ki.imts.bot[!is.na(X2)]
+
+
+
+# Fix Monthly label to Year
+setnames(ki.imts.bot, 
+         "Monthly",
+         "year")
+
+
+# X2 should be Month 
+setnames(ki.imts.bot, 
+         "X2",
+         "month")
+
+
+# Exports FOB Domestic 
+setnames(ki.imts.bot, 
+         "X3",
+         "exports-fob-domestic")
+
+
+# Exports FOB Re-Export 
+setnames(ki.imts.bot, 
+         "X4",
+         "exports-fob-reexport")
+
+
+# Exports FOB Total 
+setnames(ki.imts.bot, 
+         "X5",
+         "exports-fob-total")
+
+
+# Imports CIF
+setnames(ki.imts.bot, 
+         "X6",
+         "imports-cif")
+
+
+
+# Trade Balance
+setnames(ki.imts.bot, 
+         "X7",
+         "trade-balance")
+
+
+head(ki.imts.bot)
+```
+
+Update Year values.
+
+```{r}
+# Update by using row number references
+# 2014
+ki.imts.bot[1:12, 
+            year := 2016]
+
+
+# 2015
+ki.imts.bot[13:24, 
+            year := 2017]
+
+
+# 2016
+ki.imts.bot[25:36, 
+            year := 2018]
+
+
+# 2017
+ki.imts.bot[37:48, 
+            year := 2019]
+
+
+head(C)
+```
+
+Melt the table to adhere to the key-value pair schema design. 
+
+```{r}
+# Melt the data to adhere to the schema design
+ki.imts.bot <- melt.data.table(ki.imts.bot,
+                               id = c("year",
+                                      "month"), measure = c("exports-fob-domestic",
+                                                            "exports-fob-reexport", 
+                                                            "exports-fob-total",
+                                                            "imports-cif",
+                                                            "trade-balance"))
+
+
+head(ki.imts.bot)
+```
+
+Create Date from year and month. 
+
+```{r}
+# Concatenate
+ki.imts.bot[, 
+            date := paste0(gsub(" ", "", year, fixed = TRUE),
+                           "-",
+                           gsub(" ", "",month, fixed = TRUE),
+                           "-",
+                           "01")]
+
+
+# Format Date
+ki.imts.bot[, 
+            date := as.Date(date, format = "%Y-%B-%d")]
+
+
+# Remove year and month fields 
+ki.imts.bot[, 
+            year := NULL][, 
+                          month := NULL]
+
+
+head(ki.imts.bot)
+```
+
+Rename "variable" to "name". 
+
+```{r}
+# Rename variable to name 
+setnames(ki.imts.bot, 
+         "variable",
+         "name")
+
+
+head(ki.imts.bot)
+```
+
+Add metric key, frequency, country, category, source and property informations. 
+
+```{r}
+# Metric 
+ki.imts.bot[, 
+            `:=` (frequency = "monthly", 
+                  country = "ki", 
+                  category = "trade", 
+                  source = "imts", 
+                  properties = "{'currency' = 'aud 000'}",
+                  metric_key = paste0("ki","-",name,"-",date))]
+
+
+head(ki.imts.bot)
+```
+
+Reorder data. 
+
+```{r}
+# Change order of columns to align with schema
+ki.imts.bot <- ki.imts.bot[,
+                           .(metric_key,
+                             frequency, 
+                             country,
+                             category, 
+                             source,
+                             name,
+                             date, 
+                             value,
+                             properties)]
+
+
+head(ki.imts.bot)
+```
+
+
 
 # Append to PostgresSQL Database 
 
@@ -949,6 +1321,82 @@ rs10 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_me
 
 
 count_recs10 <- dbFetch(rs10)
+
+
+dbDisconnect(db.con)
+
+```
+
+## Palau IMTS Balance of Trade Upload 
+
+```{r eval=FALSE}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+rc11 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs11 <- dbFetch(rc11)
+
+
+# # Append pl.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics",
+#                         pl.imts.bot,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs12 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs12 <- dbFetch(rs12)
+
+
+dbDisconnect(db.con)
+
+```
+
+## Kiribati IMTS Balance of Trade Upload 
+
+```{r eval=FALSE}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+rc13 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs13 <- dbFetch(rc13)
+
+
+# # Append ki.imts.bot to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "country_metrics",
+#                         ki.imts.bot,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+rs14 <- RPostgres::dbSendQuery(db.con, "SELECT count(*) as count FROM country_metrics")
+
+
+count_recs14 <- dbFetch(rs14)
 
 
 dbDisconnect(db.con)
