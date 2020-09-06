@@ -1,0 +1,132 @@
+---
+title: "Data Prep - Vanuatu AIS"
+author: "Avin Datt - PacifImpact"
+date: "04 September 2020"
+output: 
+  github_document
+---
+
+
+# Scope 
+
+AIS data was acquired via UNGP but due to the fact cluster resources were scarce, AIS data had to be extracted from Spark and then stored in a database for the wider PacifImpact team to access. 
+
+# Load Libraries
+
+```{r load libs}
+# Load data.table library
+if (!require(data.table)) {
+  install.packages("data.table")
+  library(data.table)
+}
+
+# Load DBI library
+if (!require(DBI)) {
+  install.packages("DBI")
+  library(DBI)
+}
+
+# Load DBI library
+if (!require(RPostgres)) {
+  install.packages("RPostgres")
+  library(RPostgres)
+}
+
+```
+
+# Read AIS Port Vila
+
+Read the files extracted from UNGP for Port Vila, Vanuatu. 
+
+```{r}
+# port.v.list files
+file.list <- list.files(path = "./data/external/ais_vn_port_vila/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+port.v.list <- lapply(paste0("./data/external/ais_vn_port_vila/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+port.v.list <- rbindlist(port.v.list)
+
+
+head(port.v.list)
+```
+
+# Write AIS Port Vila to PostgreSQL
+
+```{r eval=FALSE}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# # Append port.v.list to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "stg_ais",
+#                         port.v.list,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+rm(port.v.list)
+
+```
+
+# Read AIS Luganville
+
+Read the files extracted from UNGP for Luganville, Vanuatu. 
+
+```{r}
+# lugv.list files
+file.list <- list.files(path = "./data/external/ais_vn_luganville/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+lugv.list <- lapply(paste0("./data/external/ais_vn_luganville/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+lugv.list <- rbindlist(lugv.list)
+
+
+head(lugv.list)
+```
+
+# Write AIS Luganville to PostgreSQL
+
+```{r eval=FALSE}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Append lugv.list to country_metrics
+# RPostgres::dbWriteTable(db.con,
+#                         "stg_ais",
+#                         lugv.list,
+#                         append = TRUE,
+#                         row.names = FALSE)
+
+
+count <- dbGetQuery(db.con, 'select count(*) from stg_ais')
+# 14013983 records
+```
+
+ 
+
