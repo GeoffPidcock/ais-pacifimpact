@@ -1,0 +1,233 @@
+---
+title: "EDA - Pacific AIS Data"
+author: "Avin Datt - PacifImpact"
+date: "06 September 2020"
+output: 
+  github_document:
+     df_print: "kable"
+editor_options: 
+  chunk_output_type: console
+---
+
+
+# Scope 
+
+1. Explore data features. Understand summary and values. 
+2. Apply algorithms to reduce noise as outlined by [UNSTATS](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform).
+3. Create new data features using draught, time and other dimensions. 
+4. Create common model to share that can be used in conjunction with trade, and economic research by PacifImpact. 
+
+
+# Load Libraries
+
+```{r load libs}
+# Load data.table library
+if (!require(data.table)) {
+  install.packages("data.table")
+  library(data.table)
+}
+
+# Load DBI library
+if (!require(DBI)) {
+  install.packages("DBI")
+  library(DBI)
+}
+
+# Load DBI library
+if (!require(RPostgres)) {
+  install.packages("RPostgres")
+  library(RPostgres)
+}
+
+# Load SmartEDA library
+if (!require(SmartEDA)) {
+  install.packages("SmartEDA")
+  library(SmartEDA)
+}
+```
+
+# Read AIS Cook Islands.
+
+Read the files extracted from UNGP for Cook Islands. 
+
+```{r}
+# Cook Islands. files
+file.list <- list.files(
+  path = "./data/external/ais_ck/", 
+  pattern='*.csv'
+  )
+
+
+# Read files in bulk
+cklist.list <- lapply(
+  paste0("./data/external/ais_ck/",
+         file.list),
+  fread
+  )
+
+
+# turn into one table 
+cklist.list <- rbindlist(
+  cklist.list
+  )
+
+
+head(cklist.list)
+```
+
+# Exploration 
+
+1. Convert dtg and eta to as.POSIXct(x, tz = "", ...)
+
+```{r}
+# Change from char to posixct 
+cklist.list[, 
+            `:=` (dtg = as.POSIXct(dtg))]
+
+
+# check summary 
+cklist.list[,
+            summary(dtg)]
+```
+
+
+```{r}
+# Check out dataset quality
+ExpData(
+  data = cklist.list,
+  type = 1
+  )
+```
+
+
+```{r}
+# Check out data feature quality
+ExpData(
+  data = cklist.list,
+  type = 2
+  )
+```
+
+
+```{r}
+# Statistics for Numerical features 
+data.table(
+  ExpNumStat(
+    cklist.list,
+    by = "A",
+    gp = NULL,
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)
+```
+
+## Definitions Numerical Features
+
+[Definitions available in pdf](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform?preview=/57999715/72778218/UNGP%20-%20AIS%20ADSB%20JupyterHubNotebookQueryGuide.pdf#AISdataattheUNGlobalPlatform-Step-by-stepguidelinesforexecutingthesamplescriptsonUNGP)
+
+**cog:** Course over Ground [Degrees]
+
+**draught:** Vessel Draught [Metres]
+
+**eta:** Month, Day, Hour, and Minute of Estimated Time of Arrival in UTC [MMDDHHmm]
+
+**flag_code:** Country of Registration Code
+
+**heading:** Heading [Degrees]
+
+**latitude:** WGS 84 Latitude Coordinate [Decimal Degrees]
+
+**length:** Length of Bow to Main Tower and Main Tower to Stern [Meters]
+
+**longitude:** WGS 84 Longitude Coordinate [Decimal Degrees]
+
+**mmsi:** Maritime Mobile Service Identity (MMSI)
+
+**rot:** Rate of Turn [Degrees / Min]
+
+**sog:** Speed over Ground [Knots]
+
+**vessel_type_code**:* Vessel Type Code
+
+**width:** Length of Port to Main Tower and Main Tower to Starboard [Meters]
+
+
+```{r}
+# Statistics for Numerical features by Vessel Type
+data.table(
+  ExpNumStat(
+    cklist.list,
+    by = "GA",
+    gp = "vessel_type",
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)[order(-TN),
+  head(.SD,
+       10),
+  by = Vname]
+```
+
+
+```{r}
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    cklist.list,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+```
+
+## Definitions Categorical Features
+
+**vessel_class:** Class of Vessel (A/B). A =  Targeted at large commercial vessels. B = aimed at lighter commercial and leisure markets. [Link](https://en.wikipedia.org/wiki/Automatic_identification_system)
+
+**vessel_type_cargo:** Vessel Type Cargo
+
+**vessel_type_sub:** Vessel Type Sub-Category
+
+**flag_country:** Country of Registration
+
+**vessel_type_main:** Vessel Type Main
+
+**vessel_type_sub:** Vessel Type Sub-Category
+
+**nav_status:** Navigational Status
+
+**source:** Source of Position Report (S-AIS or T-AIS)
+
+**nav_status_code:** Navigational Status Code
+
+message_type: AIS Position Message type (1,2,3,4,18,19,27). Look up values available [here](https://arundaleais.github.io/docs/ais/ais_message_types.html).
+
+*1: Scheduled position report (Class A shipborne mobile equipment)
+*2: Assigned scheduled position report; (Class A shipborne mobile equipment)
+*3: Special position report, response to interrogation; (Class A shipborne mobile equipment)
+*4: Position, UTC, date and current slot number of base station
+*18: Standard position report for Class B shipborne mobile equipment to be used instead of Messages 1, 2, 3
+*19: Extended position report for class B shipborne mobile equipment; contains additional static information
+*27: Scheduled position report; Class A shipborne mobile equipment outside base station coverage
+
+
+
