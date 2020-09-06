@@ -762,6 +762,200 @@ rm(vn.imts.bot.a,
 head(vn.imts.bot)
 ```
 
+# Read IMTS Balance of Trade Kiribati Data
+
+Read in Balance of Trade - All Items for Kiribati
+
+```{r}
+# Read in Kiribati File 
+ki.imts.bot <- read.xlsx(xlsxFile = './data/external/Kiribati_IMTS_Tables_2020.xlsx',
+                         sheet = 1, 
+                         startRow = 14,
+                         skipEmptyCols = TRUE,
+                         detectDates = TRUE,
+                         rows = c(14:67),
+                         cols = c(1:7))
+
+
+head(ki.imts.bot)
+```
+
+Add and fix missing variable names. 
+
+```{r}
+# ki.imts.bot to data.table 
+ki.imts.bot <- data.table(ki.imts.bot)
+
+
+# Remove empty record
+ki.imts.bot <- ki.imts.bot[!is.na(X2)]
+
+
+
+# Fix Monthly label to Year
+setnames(ki.imts.bot, 
+         "Monthly",
+         "year")
+
+
+# X2 should be Month 
+setnames(ki.imts.bot, 
+         "X2",
+         "month")
+
+
+# Exports FOB Domestic 
+setnames(ki.imts.bot, 
+         "X3",
+         "exports-fob-domestic")
+
+
+# Exports FOB Re-Export 
+setnames(ki.imts.bot, 
+         "X4",
+         "exports-fob-reexport")
+
+
+# Exports FOB Total 
+setnames(ki.imts.bot, 
+         "X5",
+         "exports-fob-total")
+
+
+# Imports CIF
+setnames(ki.imts.bot, 
+         "X6",
+         "imports-cif")
+
+
+
+# Trade Balance
+setnames(ki.imts.bot, 
+         "X7",
+         "trade-balance")
+
+
+head(ki.imts.bot)
+```
+
+Update Year values.
+
+```{r}
+# Update by using row number references
+# 2014
+ki.imts.bot[1:12, 
+            year := 2016]
+
+
+# 2015
+ki.imts.bot[13:24, 
+            year := 2017]
+
+
+# 2016
+ki.imts.bot[25:36, 
+            year := 2018]
+
+
+# 2017
+ki.imts.bot[37:48, 
+            year := 2019]
+
+
+head(C)
+```
+
+Melt the table to adhere to the key-value pair schema design. 
+
+```{r}
+# Melt the data to adhere to the schema design
+ki.imts.bot <- melt.data.table(ki.imts.bot,
+                               id = c("year",
+                                      "month"), measure = c("exports-fob-domestic",
+                                                            "exports-fob-reexport", 
+                                                            "exports-fob-total",
+                                                            "imports-cif",
+                                                            "trade-balance"))
+
+
+head(ki.imts.bot)
+```
+
+Create Date from year and month. 
+
+```{r}
+# Concatenate
+ki.imts.bot[, 
+            date := paste0(gsub(" ", "", year, fixed = TRUE),
+                           "-",
+                           gsub(" ", "",month, fixed = TRUE),
+                           "-",
+                           "01")]
+
+
+# Format Date
+ki.imts.bot[, 
+            date := as.Date(date, format = "%Y-%B-%d")]
+
+
+# Remove year and month fields 
+ki.imts.bot[, 
+            year := NULL][, 
+                          month := NULL]
+
+
+head(ki.imts.bot)
+```
+
+Rename "variable" to "name". 
+
+```{r}
+# Rename variable to name 
+setnames(ki.imts.bot, 
+         "variable",
+         "name")
+
+
+head(ki.imts.bot)
+```
+
+Add metric key, frequency, country, category, source and property informations. 
+
+```{r}
+# Metric 
+ki.imts.bot[, 
+            `:=` (frequency = "monthly", 
+                  country = "ki", 
+                  category = "trade", 
+                  source = "imts", 
+                  properties = "{'currency' = 'aud 000'}",
+                  metric_key = paste0("ki","-",name,"-",date))]
+
+
+head(ki.imts.bot)
+```
+
+Reorder data. 
+
+```{r}
+# Change order of columns to align with schema
+ki.imts.bot <- ki.imts.bot[,
+                           .(metric_key,
+                             frequency, 
+                             country,
+                             category, 
+                             source,
+                             name,
+                             date, 
+                             value,
+                             properties)]
+
+
+head(ki.imts.bot)
+```
+
+
+
 # Append to PostgresSQL Database 
 
 Connect to the hosted PostgreSQL database. 
