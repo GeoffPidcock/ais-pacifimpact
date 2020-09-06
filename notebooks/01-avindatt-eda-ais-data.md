@@ -100,7 +100,7 @@ head(cklist.list)
 
 </div>
 
-# Exploration
+## Exploration
 
 1.  Convert dtg and eta to as.POSIXct(x, tz = "", …)
 
@@ -108,19 +108,42 @@ head(cklist.list)
 
 ``` r
 # Change from char to posixct 
-cklist.list[, 
-            `:=` (dtg = as.POSIXct(dtg))]
+cklist.list[,
+            `:=` (dtg = gsub("T",
+                             " ",
+                             dtg
+                             )
+                  )][,
+                     `:=` (dtg = gsub(".000Z",
+                             "",
+                             dtg
+                             )
+                           )]
 
 
+cklist.list[,
+            `:=` (dtg = strptime(dtg, "%Y-%m-%d %H:%M:%S")
+                  )]
+```
+
+    ## Warning in strptime(dtg, "%Y-%m-%d %H:%M:%S"): strptime() usage detected and
+    ## wrapped with as.POSIXct(). This is to minimize the chance of assigning POSIXlt
+    ## columns, which use 40+ bytes to store one date (versus 8 for POSIXct). Use
+    ## as.POSIXct() (which will call strptime() as needed internally) to avoid this
+    ## warning.
+
+``` r
 # check summary 
 cklist.list[,
             summary(dtg)]
 ```
 
     ##                  Min.               1st Qu.                Median 
-    ## "2019-09-06 00:00:00" "2019-10-15 00:00:00" "2019-12-25 00:00:00" 
+    ## "2019-09-06 00:00:02" "2019-10-15 01:33:28" "2019-12-25 19:29:51" 
     ##                  Mean               3rd Qu.                  Max. 
-    ## "2020-01-16 17:19:36" "2020-03-18 00:00:00" "2020-09-01 00:00:00"
+    ## "2020-01-17 06:06:41" "2020-03-18 12:16:00" "2020-09-01 00:37:12" 
+    ##                  NA's 
+    ##                   "2"
 
 ``` r
 # Check out dataset quality
@@ -132,21 +155,21 @@ ExpData(
 
 <div class="kable-table">
 
-| Descriptions                                          | Value      |
-| :---------------------------------------------------- | :--------- |
-| Sample size (nrow)                                    | 141833     |
-| No. of variables (ncol)                               | 28         |
-| No. of numeric/interger variables                     | 15         |
-| No. of factor variables                               | 0          |
-| No. of text variables                                 | 12         |
-| No. of logical variables                              | 0          |
-| No. of identifier variables                           | 0          |
-| No. of date variables                                 | 1          |
-| No. of zero variance variables (uniform)              | 0          |
-| %. of variables having complete cases                 | 75% (21)   |
-| %. of variables having \>0% and \<50% missing cases   | 17.86% (5) |
-| %. of variables having \>=50% and \<90% missing cases | 7.14% (2)  |
-| %. of variables having \>=90% missing cases           | 0% (0)     |
+| Descriptions                                          | Value       |
+| :---------------------------------------------------- | :---------- |
+| Sample size (nrow)                                    | 141833      |
+| No. of variables (ncol)                               | 28          |
+| No. of numeric/interger variables                     | 15          |
+| No. of factor variables                               | 0           |
+| No. of text variables                                 | 12          |
+| No. of logical variables                              | 0           |
+| No. of identifier variables                           | 0           |
+| No. of date variables                                 | 1           |
+| No. of zero variance variables (uniform)              | 0           |
+| %. of variables having complete cases                 | 71.43% (20) |
+| %. of variables having \>0% and \<50% missing cases   | 21.43% (6)  |
+| %. of variables having \>=50% and \<90% missing cases | 7.14% (2)   |
+| %. of variables having \>=90% missing cases           | 0% (0)      |
 
 </div>
 
@@ -162,7 +185,7 @@ ExpData(
 
 | Index | Variable\_Name           | Variable\_Type | Per\_of\_Missing | No\_of\_distinct\_values |
 | ----: | :----------------------- | :------------- | ---------------: | -----------------------: |
-|     1 | dtg                      | POSIXct:POSIXt |          0.00000 |                      209 |
+|     1 | dtg                      | POSIXct:POSIXt |          0.00001 |                   141313 |
 |     2 | mmsi                     | integer        |          0.00000 |                       80 |
 |     3 | vessel\_name             | character      |          0.00000 |                       86 |
 |     4 | callsign                 | character      |          0.01631 |                       60 |
@@ -556,3 +579,2090 @@ shipborne mobile equipment to be used instead of Messages 1, 2, 3 *19:
 Extended position report for class B shipborne mobile equipment;
 contains additional static information \*27: Scheduled position report;
 Class A shipborne mobile equipment outside base station coverage
+
+## Noise Reduction oo
+
+Numerous methods are outlined to reduce noise. Replicate the procedures
+outlined by
+[UNSTATS](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform).
+
+### “Moving Ships” filter Algorithm
+
+From UNSTATS:
+
+> The distance travelled is calculated in the “Calculate the mount of
+> motion” block by computing the minimum and maximum of latitude and
+> longitudes for all ship positions over the selected period. The
+> differences in latitude and longitude, the deltas, are compared
+> against a predefined threshold values.
+
+### “Time in Port” Indicator
+
+From UNSTATS:
+
+> The “Time in Port” indicator measures the total time spent by all
+> ships within the boundaries of the port monthly over the defined
+> period.
+
+Frequency of calculation: Monthly
+
+1.  Calculate time difference between sorted time messages for each MMSI
+    saved as time deltas.
+2.  Generate Port Index (arbitrary because selection is only for port
+    bounds) + Time Period (Month) + Year
+
+<!-- end list -->
+
+``` r
+# Calculate time difference 
+# Sort by mmsi and dth 
+cklist.list <- cklist.list[order(cklist.list$dtg),
+            `:=` (time_diff_seconds = dtg - shift(dtg)),
+            by = mmsi][order(cklist.list$dtg,
+                             cklist.list$mmsi)]
+
+
+# Create index
+cklist.list[,
+            index := paste0("ck-tip-",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+tim.ds <- cklist.list[,
+                 .(time_in_port_seconds = sum(time_diff_seconds,
+                                              na.rm = TRUE)),
+                 by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)][time_in_port_seconds != 0]
+
+
+# z <- tim.ds[,
+#        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
+#        by = .(year,
+#               month)]
+
+
+# melt.data.table(ki.imts.bot,
+#                                id = c("year",
+#                                       "month"), measure = c("exports-fob-domestic",
+#                                                             "exports-fob-reexport", 
+#                                                             "exports-fob-total",
+#                                                             "imports-cif",
+#                                                             "trade-balance"))
+
+
+tim.ds <- melt.data.table(tim.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "time_in_port_seconds")
+```
+
+### “Port Traffic” Indicator
+
+From UNSTATS:
+
+> The “Port Traffic” indicator captures how many unique ships have been
+> observed in port based on their reported MMSI.
+
+Frequency of calculation: Monthly
+
+1.  Create time period index using mmsi + port + time period (month)
+2.  Count Unique
+
+<!-- end list -->
+
+``` r
+# Create index
+cklist.list[,
+            index := paste0("ck-ptr",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+ptr.ds <- cklist.list[, 
+                  .(unique_count_mmsi = .N), 
+                  by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)]
+
+
+# z <- ptr.ds[,
+#        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
+#        by = .(year,
+#               month)]
+
+
+ptr.ds <- melt.data.table(ptr.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "unique_count_mmsi")
+
+
+
+tim.ds[, value := as.integer(value)]
+
+
+ck_ais <- rbind(tim.ds, ptr.ds)
+
+
+fwrite(ck_ais, "./data/processed/ck_ais.csv")
+```
+
+# Read Suva Fiji Islands.
+
+Read the files extracted from UNGP for Lautoka, Fiji Islands.
+
+``` r
+# Suva files
+file.list <- list.files(path = "./data/external/ais_fj_suva/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+suva.list <- lapply(paste0("./data/external/ais_fj_suva/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+suva.list <- rbindlist(suva.list)
+
+
+head(suva.list)
+```
+
+## Exploration
+
+1.  Convert dtg and eta to as.POSIXct(x, tz = "", …)
+
+<!-- end list -->
+
+``` r
+# Change from char to posixct 
+suva.list[,
+            `:=` (dtg = gsub("T",
+                             " ",
+                             dtg
+                             )
+                  )][,
+                     `:=` (dtg = gsub(".000Z",
+                             "",
+                             dtg
+                             )
+                           )]
+
+
+suva.list[,
+            `:=` (dtg = strptime(dtg, "%Y-%m-%d %H:%M:%S")
+                  )]
+
+
+# check summary 
+suva.list[,
+            summary(dtg)]
+```
+
+``` r
+# Check out dataset quality
+ExpData(
+  data = suva.list,
+  type = 1
+  )
+```
+
+``` r
+# Check out data feature quality
+ExpData(
+  data = suva.list,
+  type = 2
+  )
+```
+
+``` r
+# Statistics for Numerical features 
+data.table(
+  ExpNumStat(
+    suva.list,
+    by = "A",
+    gp = NULL,
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)
+```
+
+``` r
+# Statistics for Numerical features by Vessel Type
+data.table(
+  ExpNumStat(
+    suva.list,
+    by = "GA",
+    gp = "vessel_type",
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)[order(-TN),
+  head(.SD,
+       10),
+  by = Vname]
+```
+
+``` r
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    suva.list,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+```
+
+## Noise Reduction
+
+Numerous methods are outlined to reduce noise. Replicate the procedures
+outlined by
+[UNSTATS](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform).
+
+### “Moving Ships” filter Algorithm
+
+From UNSTATS:
+
+> The distance travelled is calculated in the “Calculate the mount of
+> motion” block by computing the minimum and maximum of latitude and
+> longitudes for all ship positions over the selected period. The
+> differences in latitude and longitude, the deltas, are compared
+> against a predefined threshold values.
+
+### “Time in Port” Indicator
+
+From UNSTATS:
+
+> The “Time in Port” indicator measures the total time spent by all
+> ships within the boundaries of the port monthly over the defined
+> period.
+
+Frequency of calculation: Monthly
+
+1.  Calculate time difference between sorted time messages for each MMSI
+    saved as time deltas.
+2.  Generate Port Index (arbitrary because selection is only for port
+    bounds) + Time Period (Month) + Year
+
+<!-- end list -->
+
+``` r
+# Calculate time difference 
+# Sort by mmsi and dth 
+suva.list <- suva.list[order(suva.list$dtg),
+            `:=` (time_diff_seconds = dtg - shift(dtg)),
+            by = mmsi][order(suva.list$dtg,
+                             suva.list$mmsi)]
+
+
+# Create index
+suva.list[,
+            index := paste0("fj-suva-tip-",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+tim.ds <- suva.list[,
+                 .(time_in_port_seconds = sum(time_diff_seconds,
+                                              na.rm = TRUE)),
+                 by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)][time_in_port_seconds != 0]
+
+
+# z <- tim.ds[,
+#        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
+#        by = .(year,
+#               month)]
+
+
+# melt.data.table(ki.imts.bot,
+#                                id = c("year",
+#                                       "month"), measure = c("exports-fob-domestic",
+#                                                             "exports-fob-reexport", 
+#                                                             "exports-fob-total",
+#                                                             "imports-cif",
+#                                                             "trade-balance"))
+
+
+tim.ds <- melt.data.table(tim.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "time_in_port_seconds")
+```
+
+### “Port Traffic” Indicator
+
+From UNSTATS:
+
+> The “Port Traffic” indicator captures how many unique ships have been
+> observed in port based on their reported MMSI.
+
+Frequency of calculation: Monthly
+
+1.  Create time period index using mmsi + port + time period (month)
+2.  Count Unique
+
+<!-- end list -->
+
+``` r
+# Create index
+suva.list[,
+            index := paste0("fj-suva-ptr",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+ptr.ds <- suva.list[, 
+                  .(unique_count_mmsi = .N), 
+                  by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)]
+
+
+# z <- ptr.ds[,
+#        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
+#        by = .(year,
+#               month)]
+
+
+ptr.ds <- melt.data.table(ptr.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "unique_count_mmsi")
+
+
+
+tim.ds[, value := as.integer(value)]
+
+
+fj_suva_ais <- rbind(tim.ds, ptr.ds)
+
+
+fwrite(fj_suva_ais, "./data/processed/fj_suva_ais.csv")
+```
+
+# Read Lautoka Fiji Islands
+
+Read the files extracted from UNGP for Lautoka, Fiji Islands.
+
+``` r
+# Suva files
+file.list <- list.files(path = "./data/external/ais_fj_lautoka/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+lautoka.list <- lapply(paste0("./data/external/ais_fj_lautoka/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+lautoka.list <- rbindlist(lautoka.list)
+
+
+head(lautoka.list)
+```
+
+## Exploration
+
+1.  Convert dtg and eta to as.POSIXct(x, tz = "", …)
+
+<!-- end list -->
+
+``` r
+# Change from char to posixct 
+lautoka.list[,
+            `:=` (dtg = gsub("T",
+                             " ",
+                             dtg
+                             )
+                  )][,
+                     `:=` (dtg = gsub(".000Z",
+                             "",
+                             dtg
+                             )
+                           )]
+
+
+lautoka.list[,
+            `:=` (dtg = strptime(dtg, "%Y-%m-%d %H:%M:%S")
+                  )]
+
+
+# check summary 
+lautoka.list[,
+            summary(dtg)]
+```
+
+``` r
+# Check out dataset quality
+ExpData(
+  data = lautoka.list,
+  type = 1
+  )
+```
+
+``` r
+# Check out data feature quality
+ExpData(
+  data = lautoka.list,
+  type = 2
+  )
+```
+
+``` r
+# Statistics for Numerical features 
+data.table(
+  ExpNumStat(
+    lautoka.list,
+    by = "A",
+    gp = NULL,
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)
+```
+
+``` r
+# Statistics for Numerical features by Vessel Type
+data.table(
+  ExpNumStat(
+    lautoka.list,
+    by = "GA",
+    gp = "vessel_type",
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)[order(-TN),
+  head(.SD,
+       10),
+  by = Vname]
+```
+
+``` r
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    lautoka.list,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+```
+
+## Noise Reduction
+
+Numerous methods are outlined to reduce noise. Replicate the procedures
+outlined by
+[UNSTATS](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform).
+
+### “Moving Ships” filter Algorithm
+
+From UNSTATS:
+
+> The distance travelled is calculated in the “Calculate the mount of
+> motion” block by computing the minimum and maximum of latitude and
+> longitudes for all ship positions over the selected period. The
+> differences in latitude and longitude, the deltas, are compared
+> against a predefined threshold values.
+
+``` 
+```
+
+### “Time in Port” Indicator
+
+From UNSTATS:
+
+> The “Time in Port” indicator measures the total time spent by all
+> ships within the boundaries of the port monthly over the defined
+> period.
+
+Frequency of calculation: Monthly
+
+1.  Calculate time difference between sorted time messages for each MMSI
+    saved as time deltas.
+2.  Generate Port Index (arbitrary because selection is only for port
+    bounds) + Time Period (Month) + Year
+
+<!-- end list -->
+
+``` r
+# Calculate time difference 
+# Sort by mmsi and dth 
+lautoka.list <- lautoka.list[order(lautoka.list$dtg),
+            `:=` (time_diff_seconds = dtg - shift(dtg)),
+            by = mmsi][order(lautoka.list$dtg,
+                             lautoka.list$mmsi)]
+
+
+# Create index
+lautoka.list[,
+            index := paste0("fj-suva-tip-",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+tim.ds <- lautoka.list[,
+                 .(time_in_port_seconds = sum(time_diff_seconds,
+                                              na.rm = TRUE)),
+                 by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)][time_in_port_seconds != 0]
+
+
+# z <- tim.ds[,
+#        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
+#        by = .(year,
+#               month)]
+
+
+# melt.data.table(ki.imts.bot,
+#                                id = c("year",
+#                                       "month"), measure = c("exports-fob-domestic",
+#                                                             "exports-fob-reexport", 
+#                                                             "exports-fob-total",
+#                                                             "imports-cif",
+#                                                             "trade-balance"))
+
+
+tim.ds <- melt.data.table(tim.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "time_in_port_seconds")
+```
+
+### “Port Traffic” Indicator
+
+From UNSTATS:
+
+> The “Port Traffic” indicator captures how many unique ships have been
+> observed in port based on their reported MMSI.
+
+Frequency of calculation: Monthly
+
+1.  Create time period index using mmsi + port + time period (month)
+2.  Count Unique
+
+<!-- end list -->
+
+``` r
+# Create index
+lautoka.list[,
+            index := paste0("fj-suva-ptr",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+ptr.ds <- lautoka.list[, 
+                  .(unique_count_mmsi = .N), 
+                  by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)]
+
+
+# z <- ptr.ds[,
+#        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
+#        by = .(year,
+#               month)]
+
+
+ptr.ds <- melt.data.table(ptr.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "unique_count_mmsi")
+
+
+
+tim.ds[, value := as.integer(value)]
+
+
+fj_ltka_ais <- rbind(tim.ds, ptr.ds)
+
+
+fwrite(fj_ltka_ais, "./data/processed/fj_ltka_ais.csv")
+```
+
+# Read Noro Solomon Islands
+
+Read the files extracted from UNGP for Noro, Solomon Islands.
+
+``` r
+# Noro files
+file.list <- list.files(path = "./data/external/ais_sl_noro/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+noro.list <- lapply(paste0("./data/external/ais_sl_noro/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+noro.list <- rbindlist(noro.list)
+
+
+head(noro.list)
+```
+
+## Exploration
+
+1.  Convert dtg and eta to as.POSIXct(x, tz = "", …)
+
+<!-- end list -->
+
+``` r
+# Change from char to posixct 
+noro.list[,
+            `:=` (dtg = gsub("T",
+                             " ",
+                             dtg
+                             )
+                  )][,
+                     `:=` (dtg = gsub(".000Z",
+                             "",
+                             dtg
+                             )
+                           )]
+
+
+noro.list[,
+            `:=` (dtg = strptime(dtg, "%Y-%m-%d %H:%M:%S")
+                  )]
+
+
+# check summary 
+noro.list[,
+            summary(dtg)]
+```
+
+``` r
+# Check out dataset quality
+ExpData(
+  data = noro.list,
+  type = 1
+  )
+```
+
+``` r
+# Check out data feature quality
+ExpData(
+  data = noro.list,
+  type = 2
+  )
+```
+
+``` r
+# Statistics for Numerical features 
+data.table(
+  ExpNumStat(
+    noro.list,
+    by = "A",
+    gp = NULL,
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)
+```
+
+``` r
+# Statistics for Numerical features by Vessel Type
+data.table(
+  ExpNumStat(
+    noro.list,
+    by = "GA",
+    gp = "vessel_type",
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)[order(-TN),
+  head(.SD,
+       10),
+  by = Vname]
+```
+
+``` r
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    noro.list,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+```
+
+## Noise Reduction
+
+Numerous methods are outlined to reduce noise. Replicate the procedures
+outlined by
+[UNSTATS](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform).
+
+### “Moving Ships” filter Algorithm
+
+From UNSTATS:
+
+> The distance travelled is calculated in the “Calculate the mount of
+> motion” block by computing the minimum and maximum of latitude and
+> longitudes for all ship positions over the selected period. The
+> differences in latitude and longitude, the deltas, are compared
+> against a predefined threshold values.
+
+### “Time in Port” Indicator
+
+From UNSTATS:
+
+> The “Time in Port” indicator measures the total time spent by all
+> ships within the boundaries of the port monthly over the defined
+> period.
+
+Frequency of calculation: Monthly
+
+1.  Calculate time difference between sorted time messages for each MMSI
+    saved as time deltas.
+2.  Generate Port Index (arbitrary because selection is only for port
+    bounds) + Time Period (Month) + Year
+
+<!-- end list -->
+
+``` r
+# Calculate time difference 
+# Sort by mmsi and dth 
+noro.list <- noro.list[order(noro.list$dtg),
+            `:=` (time_diff_seconds = dtg - shift(dtg)),
+            by = mmsi][order(noro.list$dtg,
+                             noro.list$mmsi)]
+
+
+# Create index
+noro.list[,
+            index := paste0("fj-suva-tip-",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+tim.ds <- noro.list[,
+                 .(time_in_port_seconds = sum(time_diff_seconds,
+                                              na.rm = TRUE)),
+                 by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)][time_in_port_seconds != 0]
+
+
+# z <- tim.ds[,
+#        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
+#        by = .(year,
+#               month)]
+
+
+# melt.data.table(ki.imts.bot,
+#                                id = c("year",
+#                                       "month"), measure = c("exports-fob-domestic",
+#                                                             "exports-fob-reexport", 
+#                                                             "exports-fob-total",
+#                                                             "imports-cif",
+#                                                             "trade-balance"))
+
+
+tim.ds <- melt.data.table(tim.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "time_in_port_seconds")
+```
+
+### “Port Traffic” Indicator
+
+From UNSTATS:
+
+> The “Port Traffic” indicator captures how many unique ships have been
+> observed in port based on their reported MMSI.
+
+Frequency of calculation: Monthly
+
+1.  Create time period index using mmsi + port + time period (month)
+2.  Count Unique
+
+<!-- end list -->
+
+``` r
+# Create index
+noro.list[,
+            index := paste0("fj-suva-ptr",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+ptr.ds <- noro.list[, 
+                  .(unique_count_mmsi = .N), 
+                  by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)]
+
+
+# z <- ptr.ds[,
+#        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
+#        by = .(year,
+#               month)]
+
+
+ptr.ds <- melt.data.table(ptr.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "unique_count_mmsi")
+
+
+
+tim.ds[, value := as.integer(value)]
+
+
+sl_noro_ais <- rbind(tim.ds, ptr.ds)
+
+
+fwrite(sl_noro_ais, "./data/processed/sl_noro_ais.csv")
+```
+
+# Read Port Vila Vanuatu
+
+Read the files extracted from UNGP for Port Vila, Vanuatu.
+
+``` r
+# port.v.list files
+file.list <- list.files(path = "./data/external/ais_vn_port_vila/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+port.v.list <- lapply(paste0("./data/external/ais_vn_port_vila/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+port.v.list <- rbindlist(port.v.list)
+
+
+head(port.v.list)
+```
+
+## Exploration
+
+1.  Convert dtg and eta to as.POSIXct(x, tz = "", …)
+
+<!-- end list -->
+
+``` r
+# Change from char to posixct 
+port.v.list[,
+            `:=` (dtg = gsub("T",
+                             " ",
+                             dtg
+                             )
+                  )][,
+                     `:=` (dtg = gsub(".000Z",
+                             "",
+                             dtg
+                             )
+                           )]
+
+
+port.v.list[,
+            `:=` (dtg = strptime(dtg, "%Y-%m-%d %H:%M:%S")
+                  )]
+
+
+# check summary 
+port.v.list[,
+            summary(dtg)]
+```
+
+``` r
+# Check out dataset quality
+ExpData(
+  data = port.v.list,
+  type = 1
+  )
+```
+
+``` r
+# Check out data feature quality
+ExpData(
+  data = port.v.list,
+  type = 2
+  )
+```
+
+``` r
+# Statistics for Numerical features 
+data.table(
+  ExpNumStat(
+    port.v.list,
+    by = "A",
+    gp = NULL,
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)
+```
+
+``` r
+# Statistics for Numerical features by Vessel Type
+data.table(
+  ExpNumStat(
+    port.v.list,
+    by = "GA",
+    gp = "vessel_type",
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)[order(-TN),
+  head(.SD,
+       10),
+  by = Vname]
+```
+
+``` r
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    port.v.list,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+```
+
+## Noise Reduction
+
+Numerous methods are outlined to reduce noise. Replicate the procedures
+outlined by
+[UNSTATS](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform).
+
+### “Moving Ships” filter Algorithm
+
+From UNSTATS:
+
+> The distance travelled is calculated in the “Calculate the mount of
+> motion” block by computing the minimum and maximum of latitude and
+> longitudes for all ship positions over the selected period. The
+> differences in latitude and longitude, the deltas, are compared
+> against a predefined threshold values.
+
+### “Time in Port” Indicator
+
+From UNSTATS:
+
+> The “Time in Port” indicator measures the total time spent by all
+> ships within the boundaries of the port monthly over the defined
+> period.
+
+Frequency of calculation: Monthly
+
+1.  Calculate time difference between sorted time messages for each MMSI
+    saved as time deltas.
+2.  Generate Port Index (arbitrary because selection is only for port
+    bounds) + Time Period (Month) + Year
+
+<!-- end list -->
+
+``` r
+# Calculate time difference 
+# Sort by mmsi and dth 
+port.v.list <- port.v.list[order(port.v.list$dtg),
+            `:=` (time_diff_seconds = dtg - shift(dtg)),
+            by = mmsi][order(port.v.list$dtg,
+                             port.v.list$mmsi)]
+
+
+# Create index
+port.v.list[,
+            index := paste0("fj-suva-tip-",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+tim.ds <- port.v.list[,
+                 .(time_in_port_seconds = sum(time_diff_seconds,
+                                              na.rm = TRUE)),
+                 by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)][time_in_port_seconds != 0]
+
+
+# z <- tim.ds[,
+#        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
+#        by = .(year,
+#               month)]
+
+
+# melt.data.table(ki.imts.bot,
+#                                id = c("year",
+#                                       "month"), measure = c("exports-fob-domestic",
+#                                                             "exports-fob-reexport", 
+#                                                             "exports-fob-total",
+#                                                             "imports-cif",
+#                                                             "trade-balance"))
+
+
+tim.ds <- melt.data.table(tim.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "time_in_port_seconds")
+```
+
+### “Port Traffic” Indicator
+
+From UNSTATS:
+
+> The “Port Traffic” indicator captures how many unique ships have been
+> observed in port based on their reported MMSI.
+
+Frequency of calculation: Monthly
+
+1.  Create time period index using mmsi + port + time period (month)
+2.  Count Unique
+
+<!-- end list -->
+
+``` r
+# Create index
+port.v.list[,
+            index := paste0("fj-suva-ptr",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+ptr.ds <- port.v.list[, 
+                  .(unique_count_mmsi = .N), 
+                  by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)]
+
+
+# z <- ptr.ds[,
+#        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
+#        by = .(year,
+#               month)]
+
+
+ptr.ds <- melt.data.table(ptr.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "unique_count_mmsi")
+
+
+
+tim.ds[, value := as.integer(value)]
+
+
+vn_pv_ais <- rbind(tim.ds, ptr.ds)
+
+
+fwrite(vn_pv_ais, "./data/processed/vn_portvila_ais.csv")
+```
+
+# Read Luganville Vanuatu
+
+Read the files extracted from UNGP for Luganville, Vanuatu.
+
+``` r
+# lugv.list files
+file.list <- list.files(path = "./data/external/ais_vn_luganville/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+lugv.list <- lapply(paste0("./data/external/ais_vn_luganville/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+lugv.list <- rbindlist(lugv.list)
+
+
+head(lugv.list)
+```
+
+## Exploration
+
+1.  Convert dtg and eta to as.POSIXct(x, tz = "", …)
+
+<!-- end list -->
+
+``` r
+# Change from char to posixct 
+lugv.list[,
+            `:=` (dtg = gsub("T",
+                             " ",
+                             dtg
+                             )
+                  )][,
+                     `:=` (dtg = gsub(".000Z",
+                             "",
+                             dtg
+                             )
+                           )]
+
+
+lugv.list[,
+            `:=` (dtg = strptime(dtg, "%Y-%m-%d %H:%M:%S")
+                  )]
+
+
+# check summary 
+lugv.list[,
+            summary(dtg)]
+```
+
+``` r
+# Check out dataset quality
+ExpData(
+  data = lugv.list,
+  type = 1
+  )
+```
+
+``` r
+# Check out data feature quality
+ExpData(
+  data = lugv.list,
+  type = 2
+  )
+```
+
+``` r
+# Statistics for Numerical features 
+data.table(
+  ExpNumStat(
+    lugv.list,
+    by = "A",
+    gp = NULL,
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)
+```
+
+``` r
+# Statistics for Numerical features by Vessel Type
+data.table(
+  ExpNumStat(
+    lugv.list,
+    by = "GA",
+    gp = "vessel_type",
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)[order(-TN),
+  head(.SD,
+       10),
+  by = Vname]
+```
+
+``` r
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    lugv.list,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+```
+
+## Noise Reduction
+
+Numerous methods are outlined to reduce noise. Replicate the procedures
+outlined by
+[UNSTATS](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform).
+
+### “Moving Ships” filter Algorithm
+
+From UNSTATS:
+
+> The distance travelled is calculated in the “Calculate the mount of
+> motion” block by computing the minimum and maximum of latitude and
+> longitudes for all ship positions over the selected period. The
+> differences in latitude and longitude, the deltas, are compared
+> against a predefined threshold values.
+
+### “Time in Port” Indicator
+
+From UNSTATS:
+
+> The “Time in Port” indicator measures the total time spent by all
+> ships within the boundaries of the port monthly over the defined
+> period.
+
+Frequency of calculation: Monthly
+
+1.  Calculate time difference between sorted time messages for each MMSI
+    saved as time deltas.
+2.  Generate Port Index (arbitrary because selection is only for port
+    bounds) + Time Period (Month) + Year
+
+<!-- end list -->
+
+``` r
+# Calculate time difference 
+# Sort by mmsi and dth 
+lugv.list <- lugv.list[order(lugv.list$dtg),
+            `:=` (time_diff_seconds = dtg - shift(dtg)),
+            by = mmsi][order(lugv.list$dtg,
+                             lugv.list$mmsi)]
+
+
+# Create index
+lugv.list[,
+            index := paste0("fj-suva-tip-",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+tim.ds <- lugv.list[,
+                 .(time_in_port_seconds = sum(time_diff_seconds,
+                                              na.rm = TRUE)),
+                 by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)][time_in_port_seconds != 0]
+
+
+# z <- tim.ds[,
+#        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
+#        by = .(year,
+#               month)]
+
+
+# melt.data.table(ki.imts.bot,
+#                                id = c("year",
+#                                       "month"), measure = c("exports-fob-domestic",
+#                                                             "exports-fob-reexport", 
+#                                                             "exports-fob-total",
+#                                                             "imports-cif",
+#                                                             "trade-balance"))
+
+
+tim.ds <- melt.data.table(tim.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "time_in_port_seconds")
+```
+
+### “Port Traffic” Indicator
+
+From UNSTATS:
+
+> The “Port Traffic” indicator captures how many unique ships have been
+> observed in port based on their reported MMSI.
+
+Frequency of calculation: Monthly
+
+1.  Create time period index using mmsi + port + time period (month)
+2.  Count Unique
+
+<!-- end list -->
+
+``` r
+# Create index
+lugv.list[,
+            index := paste0("fj-suva-ptr",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+ptr.ds <- lugv.list[, 
+                  .(unique_count_mmsi = .N), 
+                  by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)]
+
+
+# z <- ptr.ds[,
+#        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
+#        by = .(year,
+#               month)]
+
+
+ptr.ds <- melt.data.table(ptr.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "unique_count_mmsi")
+
+
+
+tim.ds[, value := as.integer(value)]
+
+
+vn_lv_ais <- rbind(tim.ds, ptr.ds)
+
+
+fwrite(vn_lv_ais, "./data/processed/vn_lugv_ais.csv")
+```
+
+# Read Honoira Solomon Islands
+
+Read the files extracted from UNGP for Honiora, Solomon Islands.
+
+``` r
+# Honiora files
+file.list <- list.files(path = "./data/external/ais_sl_honiora/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+honiora.list <- lapply(paste0("./data/external/ais_sl_honiora/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+honiora.list <- rbindlist(honiora.list)
+
+
+head(honiora.list)
+```
+
+## Exploration
+
+1.  Convert dtg and eta to as.POSIXct(x, tz = "", …)
+
+<!-- end list -->
+
+``` r
+# Change from char to posixct 
+honiora.list[,
+            `:=` (dtg = gsub("T",
+                             " ",
+                             dtg
+                             )
+                  )][,
+                     `:=` (dtg = gsub(".000Z",
+                             "",
+                             dtg
+                             )
+                           )]
+
+
+honiora.list[,
+            `:=` (dtg = strptime(dtg, "%Y-%m-%d %H:%M:%S")
+                  )]
+
+
+# check summary 
+honiora.list[,
+            summary(dtg)]
+```
+
+``` r
+# Check out dataset quality
+ExpData(
+  data = honiora.list,
+  type = 1
+  )
+```
+
+``` r
+# Check out data feature quality
+ExpData(
+  data = honiora.list,
+  type = 2
+  )
+```
+
+``` r
+# Statistics for Numerical features 
+data.table(
+  ExpNumStat(
+    honiora.list,
+    by = "A",
+    gp = NULL,
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)
+```
+
+``` r
+# Statistics for Numerical features by Vessel Type
+data.table(
+  ExpNumStat(
+    honiora.list,
+    by = "GA",
+    gp = "vessel_type",
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)[order(-TN),
+  head(.SD,
+       10),
+  by = Vname]
+```
+
+``` r
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    honiora.list,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+```
+
+## Noise Reduction
+
+Numerous methods are outlined to reduce noise. Replicate the procedures
+outlined by
+[UNSTATS](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform).
+
+### “Moving Ships” filter Algorithm
+
+From UNSTATS:
+
+> The distance travelled is calculated in the “Calculate the mount of
+> motion” block by computing the minimum and maximum of latitude and
+> longitudes for all ship positions over the selected period. The
+> differences in latitude and longitude, the deltas, are compared
+> against a predefined threshold values.
+
+### “Time in Port” Indicator
+
+From UNSTATS:
+
+> The “Time in Port” indicator measures the total time spent by all
+> ships within the boundaries of the port monthly over the defined
+> period.
+
+Frequency of calculation: Monthly
+
+1.  Calculate time difference between sorted time messages for each MMSI
+    saved as time deltas.
+2.  Generate Port Index (arbitrary because selection is only for port
+    bounds) + Time Period (Month) + Year
+
+<!-- end list -->
+
+``` r
+# Calculate time difference 
+# Sort by mmsi and dth 
+honiora.list <- honiora.list[order(honiora.list$dtg),
+            `:=` (time_diff_seconds = dtg - shift(dtg)),
+            by = mmsi][order(honiora.list$dtg,
+                             honiora.list$mmsi)]
+
+
+# Create index
+honiora.list[,
+            index := paste0("fj-suva-tip-",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+tim.ds <- honiora.list[,
+                 .(time_in_port_seconds = sum(time_diff_seconds,
+                                              na.rm = TRUE)),
+                 by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)][time_in_port_seconds != 0]
+
+
+# z <- tim.ds[,
+#        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
+#        by = .(year,
+#               month)]
+
+
+# melt.data.table(ki.imts.bot,
+#                                id = c("year",
+#                                       "month"), measure = c("exports-fob-domestic",
+#                                                             "exports-fob-reexport", 
+#                                                             "exports-fob-total",
+#                                                             "imports-cif",
+#                                                             "trade-balance"))
+
+
+tim.ds <- melt.data.table(tim.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "time_in_port_seconds")
+```
+
+### “Port Traffic” Indicator
+
+From UNSTATS:
+
+> The “Port Traffic” indicator captures how many unique ships have been
+> observed in port based on their reported MMSI.
+
+Frequency of calculation: Monthly
+
+1.  Create time period index using mmsi + port + time period (month)
+2.  Count Unique
+
+<!-- end list -->
+
+``` r
+# Create index
+honiora.list[,
+            index := paste0("fj-suva-ptr",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+ptr.ds <- honiora.list[, 
+                  .(unique_count_mmsi = .N), 
+                  by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)]
+
+
+# z <- ptr.ds[,
+#        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
+#        by = .(year,
+#               month)]
+
+
+ptr.ds <- melt.data.table(ptr.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "unique_count_mmsi")
+
+
+
+tim.ds[, value := as.integer(value)]
+
+
+sl_honiora_ais <- rbind(tim.ds, ptr.ds)
+
+
+fwrite(sl_honiora_ais, "./data/processed/sl_honiora_ais.csv")
+```
+
+# Read Kiribati
+
+Read the files extracted from UNGP for Betio, Kiribati.
+
+``` r
+# betio.v.list files
+file.list <- list.files(path = "./data/external/ais_ki_betio/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+betio.v.list <- lapply(paste0("./data/external/ais_ki_betio/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+betio.v.list <- rbindlist(betio.v.list)
+
+
+betio.v.list <- betio.v.list[,1:28]
+
+
+# Remove bad values that cause the write to db to fail
+betio.v.list <- betio.v.list[!vessel_type_code %in% c("General Cargo Ship", "S-AIS", "TARAWA")]
+
+
+# Change vessel_type_code to num type 
+betio.v.list[,
+             vessel_type_code := as.numeric(vessel_type_code)]
+
+
+head(betio.v.list)
+```
+
+## Exploration
+
+1.  Convert dtg and eta to as.POSIXct(x, tz = "", …)
+
+<!-- end list -->
+
+``` r
+# Change from char to posixct 
+betio.v.list[,
+            `:=` (dtg = gsub("T",
+                             " ",
+                             dtg
+                             )
+                  )][,
+                     `:=` (dtg = gsub(".000Z",
+                             "",
+                             dtg
+                             )
+                           )]
+
+
+betio.v.list[,
+            `:=` (dtg = strptime(dtg, "%Y-%m-%d %H:%M:%S")
+                  )]
+
+
+# check summary 
+betio.v.list[,
+            summary(dtg)]
+```
+
+``` r
+# Check out dataset quality
+ExpData(
+  data = betio.v.list,
+  type = 1
+  )
+```
+
+``` r
+# Check out data feature quality
+ExpData(
+  data = betio.v.list,
+  type = 2
+  )
+```
+
+``` r
+# Statistics for Numerical features 
+data.table(
+  ExpNumStat(
+    betio.v.list,
+    by = "A",
+    gp = NULL,
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)
+```
+
+``` r
+# Statistics for Numerical features by Vessel Type
+data.table(
+  ExpNumStat(
+    betio.v.list,
+    by = "GA",
+    gp = "vessel_type",
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)[order(-TN),
+  head(.SD,
+       10),
+  by = Vname]
+```
+
+``` r
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    betio.v.list,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+```
+
+## Noise Reduction
+
+Numerous methods are outlined to reduce noise. Replicate the procedures
+outlined by
+[UNSTATS](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform).
+
+### “Moving Ships” filter Algorithm
+
+From UNSTATS:
+
+> The distance travelled is calculated in the “Calculate the mount of
+> motion” block by computing the minimum and maximum of latitude and
+> longitudes for all ship positions over the selected period. The
+> differences in latitude and longitude, the deltas, are compared
+> against a predefined threshold values.
+
+### “Time in Port” Indicator
+
+From UNSTATS:
+
+> The “Time in Port” indicator measures the total time spent by all
+> ships within the boundaries of the port monthly over the defined
+> period.
+
+Frequency of calculation: Monthly
+
+1.  Calculate time difference between sorted time messages for each MMSI
+    saved as time deltas.
+2.  Generate Port Index (arbitrary because selection is only for port
+    bounds) + Time Period (Month) + Year
+
+<!-- end list -->
+
+``` r
+# Calculate time difference 
+# Sort by mmsi and dth 
+betio.v.list <- betio.v.list[order(betio.v.list$dtg),
+            `:=` (time_diff_seconds = dtg - shift(dtg)),
+            by = mmsi][order(betio.v.list$dtg,
+                             betio.v.list$mmsi)]
+
+
+# Create index
+betio.v.list[,
+            index := paste0("fj-suva-tip-",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+tim.ds <- betio.v.list[,
+                 .(time_in_port_seconds = sum(time_diff_seconds,
+                                              na.rm = TRUE)),
+                 by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)][time_in_port_seconds != 0]
+
+
+# z <- tim.ds[,
+#        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
+#        by = .(year,
+#               month)]
+
+
+# melt.data.table(ki.imts.bot,
+#                                id = c("year",
+#                                       "month"), measure = c("exports-fob-domestic",
+#                                                             "exports-fob-reexport", 
+#                                                             "exports-fob-total",
+#                                                             "imports-cif",
+#                                                             "trade-balance"))
+
+
+tim.ds <- melt.data.table(tim.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "time_in_port_seconds")
+```
+
+### “Port Traffic” Indicator
+
+From UNSTATS:
+
+> The “Port Traffic” indicator captures how many unique ships have been
+> observed in port based on their reported MMSI.
+
+Frequency of calculation: Monthly
+
+1.  Create time period index using mmsi + port + time period (month)
+2.  Count Unique
+
+<!-- end list -->
+
+``` r
+# Create index
+betio.v.list[,
+            index := paste0("fj-suva-ptr",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+ptr.ds <- betio.v.list[, 
+                  .(unique_count_mmsi = .N), 
+                  by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)]
+
+
+# z <- ptr.ds[,
+#        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
+#        by = .(year,
+#               month)]
+
+
+ptr.ds <- melt.data.table(ptr.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "unique_count_mmsi")
+
+
+
+tim.ds[, value := as.integer(value)]
+
+
+ki_betio_ais <- rbind(tim.ds, ptr.ds)
+
+
+fwrite(ki_betio_ais, "./data/processed/ki_betio_ais.csv")
+```
