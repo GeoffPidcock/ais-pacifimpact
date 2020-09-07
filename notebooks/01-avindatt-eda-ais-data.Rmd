@@ -3009,12 +3009,12 @@ db.con <- dbConnect(RPostgres::Postgres(),
                     password = Sys.getenv("pwd"))
 
 
-# Append stg.ais.agg to country_metrics
-RPostgres::dbWriteTable(db.con,
-                        "stg_ais_agg",
-                        stg.ais.agg,
-                        overwrite = TRUE,
-                        row.names = FALSE)
+# # Append stg.ais.agg to stg_ais_agg
+# RPostgres::dbWriteTable(db.con,
+#                         "stg_ais_agg",
+#                         stg.ais.agg,
+#                         overwrite = TRUE,
+#                         row.names = FALSE)
 
 
 # Count rows after upload
@@ -3024,5 +3024,175 @@ chk.load <- RPostgres::dbGetQuery(db.con, "SELECT * FROM stg_ais_agg")
 
 dbDisconnect(db.con)
 
+```
+
+# Tourism Data Schema 
+
+Aggregate into the common schema.
+
+```{r}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM country_metrics"))
+
+
+tourism.data <- country_metrics[tolower(category) == "tourism" & frequency == "monthly"]
+
+
+# Align country labels, rename ki and kir
+tourism.data[country == "kir", 
+         country := "ki"]
+
+
+# pl to pw for palau 
+tourism.data[country %in% c("pl", "PW"), 
+         country := "pw"]
+
+
+# Create region field 
+tourism.data[country %in% c("fj", "vn", "sb"), 
+         region := "melanesia"]
+
+
+tourism.data[country %in% c('ck','ki'), 
+         region := "polynesia"]
+
+
+tourism.data[country %in% c('pw','pl'), 
+         region := "micronesia"]
+
+```
+
+Align variable names across countries before aggregating. 
+
+```{r}
+# align total-visitors for palau and vanuatu to arrivals-visitor 
+tourism.data[name == "total-visitors", 
+             name := "arrivals-visitor"]
+
+
+# tourism indicators
+tourism.data <- tourism.data[tolower(name) == "arrivals-visitor",
+                      .(visitor_arrivals = value), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+```
+
+Write to db. 
+
+```{r}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Append stg.ais.agg to stg_ais_agg
+RPostgres::dbWriteTable(db.con,
+                        "stg_tourism_agg",
+                        tourism.data,
+                        overwrite = TRUE,
+                        row.names = FALSE)
+
+
+# Count rows after upload
+chk.load <- RPostgres::dbGetQuery(db.con, "SELECT * FROM stg_tourism_agg")
+
+
+
+dbDisconnect(db.con)
+
+```
+
+
+# All Required Data Combined
+
+Merge. 
+
+```{r}
+stg_trade_agg[, 
+              date := as.Date(date)]
+
+all.together <- merge.data.table(stg_trade_agg, 
+                                 stg.ais.agg,
+                                 by = c("date", "region", "country"),
+                                 all = TRUE)
+
+tourism.data[, 
+             date := as.Date(date)]
+
+
+all.together <- merge.data.table(all.together,
+                                 tourism.data, 
+                                 by = c("date", "region", "country"),
+                                 all = TRUE)
+
+
+# Center to mean
+all.together[,
+             s_trade_volume := trade_volume/mean(trade_volume, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_cargo_uniq_mmsi_count := cargo_uniq_mmsi_count/mean(cargo_uniq_mmsi_count, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_cargo_time_in_port_seconds := cargo_time_in_port_seconds/mean(cargo_time_in_port_seconds, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_tanker_uniq_mmsi_count := tanker_uniq_mmsi_count/mean(tanker_uniq_mmsi_count, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_tanker_time_in_port_seconds := tanker_time_in_port_seconds/mean(tanker_time_in_port_seconds, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_fishing_uniq_mmsi_count := fishing_uniq_mmsi_count/mean(fishing_uniq_mmsi_count, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_fishing_time_in_port_seconds := fishing_time_in_port_seconds/mean(fishing_time_in_port_seconds, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_leisure_uniq_mmsi_count := leisure_uniq_mmsi_count/mean(leisure_uniq_mmsi_count, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_leisure_time_in_port_seconds := leisure_time_in_port_seconds/mean(leisure_time_in_port_seconds, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_visitor_arrivals := as.numeric(visitor_arrivals)/mean(as.numeric(visitor_arrivals), na.rm = TRUE), 
+             by = country]
+
+# export
+fwrite(all.together,"./data/processed/pacifimpact-project-data.csv")
 ```
 
