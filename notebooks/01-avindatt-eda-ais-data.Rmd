@@ -322,7 +322,7 @@ tim.ds <- cklist.list[,
                         vessel_class)][time_in_port_seconds != 0]
 
 
-# z <- tim.ds[,
+# z <- tim.ds[vessel_type %in% c("Cargo"),
 #        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
 #        by = .(year,
 #               month)]
@@ -383,7 +383,7 @@ ptr.ds <- cklist.list[,
                         vessel_class)]
 
 
-# z <- ptr.ds[,
+# z <- ptr.ds[vessel_type %in% c("Cargo"),
 #        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
 #        by = .(year,
 #               month)]
@@ -579,6 +579,12 @@ suva.list <- suva.list[order(suva.list$dtg),
             `:=` (time_diff_seconds = dtg - shift(dtg)),
             by = mmsi][order(suva.list$dtg,
                              suva.list$mmsi)]
+
+
+# If time difference is greater than 10800 seconds remove
+suva.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
 
 
 # Create index
@@ -859,9 +865,15 @@ lautoka.list <- lautoka.list[order(lautoka.list$dtg),
                              lautoka.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+lautoka.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 lautoka.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("fj-ltka-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -923,7 +935,7 @@ Frequency of calculation: Monthly
 ```{r eval=FALSE}
 # Create index
 lautoka.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("fj-ltka-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1138,9 +1150,15 @@ noro.list <- noro.list[order(noro.list$dtg),
                              noro.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+noro.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 noro.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("sl-noro-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1202,7 +1220,7 @@ Frequency of calculation: Monthly
 ```{r eval=FALSE}
 # Create index
 noro.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("sl-noro-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1418,9 +1436,15 @@ port.v.list <- port.v.list[order(port.v.list$dtg),
                              port.v.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+port.v.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 port.v.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("vn-ptvl-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1482,7 +1506,7 @@ Frequency of calculation: Monthly
 ```{r eval=FALSE}
 # Create index
 port.v.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("vn-ptvl-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1697,9 +1721,15 @@ lugv.list <- lugv.list[order(lugv.list$dtg),
                              lugv.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+lugv.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 lugv.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("vn-lgvl-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1761,7 +1791,7 @@ Frequency of calculation: Monthly
 ```{r eval=FALSE}
 # Create index
 lugv.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("vn-lgvl-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1977,9 +2007,15 @@ honiora.list <- honiora.list[order(honiora.list$dtg),
                              honiora.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+honiora.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 honiora.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("sl-honi-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -2041,7 +2077,7 @@ Frequency of calculation: Monthly
 ```{r eval=FALSE}
 # Create index
 honiora.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("sl-honi-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -2087,9 +2123,6 @@ fwrite(sl_honiora_ais, "./data/processed/sl_honiora_ais.csv")
 ```
 
 
-
-
-
 # Read Kiribati 
 Read the files extracted from UNGP for Betio, Kiribati. 
 
@@ -2110,15 +2143,6 @@ betio.v.list <- rbindlist(betio.v.list)
 
 
 betio.v.list <- betio.v.list[,1:28]
-
-
-# Remove bad values that cause the write to db to fail
-betio.v.list <- betio.v.list[!vessel_type_code %in% c("General Cargo Ship", "S-AIS", "TARAWA")]
-
-
-# Change vessel_type_code to num type 
-betio.v.list[,
-             vessel_type_code := as.numeric(vessel_type_code)]
 
 
 head(betio.v.list)
@@ -2268,9 +2292,15 @@ betio.v.list <- betio.v.list[order(betio.v.list$dtg),
                              betio.v.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+betio.v.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 betio.v.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("ki-beti-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -2332,7 +2362,7 @@ Frequency of calculation: Monthly
 ```{r eval=FALSE}
 # Create index
 betio.v.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("ki-beti-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -2376,6 +2406,295 @@ fwrite(ki_betio_ais, "./data/processed/ki_betio_ais.csv")
 
 
 ```
+
+
+# Read Palau
+
+Read the files extracted from UNGP for Betio, Kiribati. 
+
+```{r eval=FALSE}
+# pl.list files
+file.list <- list.files(path = "./data/external/ais_pl/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+pl.list <- lapply(paste0("./data/external/ais_pl/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+pl.list <- rbindlist(pl.list)
+
+
+pl.list <- pl.list[,1:28]
+
+
+head(pl.list)
+```
+
+## Exploration 
+
+1. Convert dtg and eta to as.POSIXct(x, tz = "", ...)
+
+```{r eval=FALSE}
+# Change from char to posixct 
+pl.list[,
+            `:=` (dtg = gsub("T",
+                             " ",
+                             dtg
+                             )
+                  )][,
+                     `:=` (dtg = gsub(".000Z",
+                             "",
+                             dtg
+                             )
+                           )]
+
+
+pl.list[,
+            `:=` (dtg = strptime(dtg, "%Y-%m-%d %H:%M:%S")
+                  )]
+
+
+# check summary 
+pl.list[,
+            summary(dtg)]
+```
+
+
+```{r eval=FALSE}
+# Check out dataset quality
+ExpData(
+  data = pl.list,
+  type = 1
+  )
+```
+
+
+```{r eval=FALSE}
+# Check out data feature quality
+ExpData(
+  data = pl.list,
+  type = 2
+  )
+```
+
+
+```{r eval=FALSE}
+# Statistics for Numerical features 
+data.table(
+  ExpNumStat(
+    pl.list,
+    by = "A",
+    gp = NULL,
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)
+```
+
+
+```{r eval=FALSE}
+# Statistics for Numerical features by Vessel Type
+data.table(
+  ExpNumStat(
+    pl.list,
+    by = "GA",
+    gp = "vessel_type",
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)[order(-TN),
+  head(.SD,
+       10),
+  by = Vname]
+```
+
+
+```{r eval=FALSE}
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    pl.list,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+```
+
+## Noise Reduction 
+
+Numerous methods are outlined to reduce noise. Replicate the procedures outlined by [UNSTATS](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform).
+
+
+### "Moving Ships" filter Algorithm
+
+From UNSTATS: 
+
+> The distance travelled is calculated in the "Calculate the mount of motion" block by computing the minimum and maximum of latitude and longitudes for all ship positions over the selected period. The differences in latitude and longitude, the deltas, are compared against a predefined threshold values. 
+
+```{r eval=FALSE}
+
+```
+
+### "Time in Port" Indicator
+
+From UNSTATS: 
+
+> The "Time in Port" indicator measures the total time spent by all ships within the boundaries of the port monthly over the defined period.
+
+Frequency of calculation: Monthly
+
+1. Calculate time difference between sorted time messages for each MMSI saved as time deltas. 
+2. Generate Port Index (arbitrary because selection is only for port bounds) + Time Period (Month) + Year
+
+
+```{r eval=FALSE}
+# Calculate time difference 
+# Sort by mmsi and dth 
+pl.list <- pl.list[order(pl.list$dtg),
+            `:=` (time_diff_seconds = dtg - shift(dtg)),
+            by = mmsi][order(pl.list$dtg,
+                             pl.list$mmsi)]
+
+
+# If time difference is greater than 10800 seconds remove
+pl.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
+# Create index
+pl.list[,
+            index := paste0("pl-tip-",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+tim.ds <- pl.list[,
+                 .(time_in_port_seconds = sum(time_diff_seconds,
+                                              na.rm = TRUE)),
+                 by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)][time_in_port_seconds != 0]
+
+
+# z <- tim.ds[,
+#        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
+#        by = .(year,
+#               month)]
+
+
+# melt.data.table(ki.imts.bot,
+#                                id = c("year",
+#                                       "month"), measure = c("exports-fob-domestic",
+#                                                             "exports-fob-reexport", 
+#                                                             "exports-fob-total",
+#                                                             "imports-cif",
+#                                                             "trade-balance"))
+
+
+tim.ds <- melt.data.table(tim.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "time_in_port_seconds")
+
+
+
+
+```
+
+
+### "Port Traffic" Indicator
+
+From UNSTATS: 
+
+> The "Port Traffic" indicator  captures how many unique ships  have been observed in port based on their reported MMSI. 
+
+Frequency of calculation: Monthly
+
+1. Create time period index using mmsi + port + time period (month)
+2. Count Unique 
+
+```{r eval=FALSE}
+# Create index
+pl.list[,
+            index := paste0("pl-ptr",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+ptr.ds <- pl.list[, 
+                  .(unique_count_mmsi = .N), 
+                  by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)]
+
+
+# z <- ptr.ds[,
+#        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
+#        by = .(year,
+#               month)]
+
+
+ptr.ds <- melt.data.table(ptr.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "unique_count_mmsi")
+
+
+
+tim.ds[, value := as.integer(value)]
+
+
+pl_ais <- rbind(tim.ds, ptr.ds)
+
+
+fwrite(pl_ais, "./data/processed/pl_ais.csv")
+
+
+```
+
+
+
 
 
 
