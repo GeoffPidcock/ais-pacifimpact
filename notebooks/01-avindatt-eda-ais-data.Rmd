@@ -267,7 +267,7 @@ From UNSTATS:
 
 Frequency of calculation: Monthly
 
-1. Calculate time difference between sorted time messages for each MMSI saved as time deltas. 
+1. Calculate time difference between sorted time messages for each MMSI saved as time deltas. If time deltas are > 10800 (3 hours) then 0 the value.
 2. Generate Port Index (arbitrary because selection is only for port bounds) + Time Period (Month) + Year
 
 
@@ -278,6 +278,28 @@ cklist.list <- cklist.list[order(cklist.list$dtg),
             `:=` (time_diff_seconds = dtg - shift(dtg)),
             by = mmsi][order(cklist.list$dtg,
                              cklist.list$mmsi)]
+
+
+# # Test calc
+# tt <- cklist.list[vessel_name == "GRINNA2", 
+#                   .(dtg, 
+#                     month = lubridate::month(dtg), 
+#                     year = lubridate::year(dtg),
+#                     time_diff_seconds)]
+# 
+# tta <- tt[, 
+#           .(time_diff_seconds = sum(time_diff_seconds, na.rm = TRUE)),
+#           by = .(dtg = as.Date(dtg))]
+# 
+# 
+# ttb <- cklist.list[time_diff_seconds > 10800]
+
+
+# If time difference is greater than 10800 seconds remove
+cklist.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
 
 
 # Create index
@@ -314,7 +336,7 @@ tim.ds <- cklist.list[,
 #                                                             "imports-cif",
 #                                                             "trade-balance"))
 
-
+# Time in port dataset
 tim.ds <- melt.data.table(tim.ds, 
                           id = c("index",
                                 "month",
