@@ -2695,8 +2695,334 @@ fwrite(pl_ais, "./data/processed/pl_ais.csv")
 
 
 
+# Common AIS Data Schema 
+
+
+Read in all aggregated AIS data. 
+
+```{r eval=FALSE}
+# list files
+file.list <- list.files(path = "./data/processed/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+ais.data <- lapply(paste0("./data/processed/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+ais.data <- rbindlist(ais.data)
+
+
+# Create country field 
+ais.data[, 
+         country := substr(index, 1, 2)]
 
 
 
+head(ais.data)
+```
 
+
+Get stg_trade_agg as example. 
+
+```{r}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+stg_trade_agg <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM stg_trade_agg"))
+
+
+# Preview
+tail(stg_trade_agg)
+```
+
+
+Align Data to similar schema as stg_trade_agg. 
+
+```{r}
+# Align country labels, rename sl to sb for solomon islands 
+ais.data[country == "sl", 
+         country := "sb"]
+
+
+# pl to pw for palau 
+ais.data[country == "pl", 
+         country := "pw"]
+
+
+# Create region field 
+ais.data[country %in% c("fj", "vn", "sb"), 
+         region := "melanesia"]
+
+
+ais.data[country %in% c('ck','ki'), 
+         region := "polynesia"]
+
+
+ais.data[country %in% c('pw','pl'), 
+         region := "micronesia"]
+
+```
+
+Aggregate data, the reliance here is on the quality of the vessel type data feature. There are bad records and empty records (refer to the statistics below). No alternate sources to impute so these we'll be ignored in the initial study, with a look to further improve data quality in subsequent studies for the use of AIS data. 
+
+Aggregating by vessel_type, 80.75% of the available data set will be used (ignoring bad data)
+
+```{r}
+
+# Check out dataset quality
+ExpData(
+  data = ais.data,
+  type = 1
+  )
+```
+
+
+
+```{r}
+# expo <- data.table(
+#   ExpCTable(
+#     country_metrics,
+#     Target = NULL,
+#     margin = 1,
+#     clim = 50,
+#     nlim = 10,
+#     round = 2,
+#     bin = 3,
+#     per = TRUE
+#   )
+# )[order(-Frequency),
+#   head(.SD,
+#        300),
+#   by = Variable]
+# 
+# fwrite(expo, "./data/processed/ds_quality_stats/country_metrics_stats.csv")
+
+
+# Check out data feature quality
+ExpData(
+  data = ais.data,
+  type = 2
+  )
+
+```
+
+
+```{r}
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    ais.data,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+
+```
+
+Cargo Time in Port and Unique Count aggregation. 
+
+```{r}
+# Create date field 
+ais.data[, 
+         date := as.Date(paste0(year,"-",month,"-01"))]
+
+
+# Cargo indicators
+cargo.ais.tim <- ais.data[tolower(vessel_type) == "cargo" & variable == "time_in_port_seconds",
+                      .(cargo_time_in_port_seconds = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Cargo indicators
+cargo.ais.ptr <- ais.data[tolower(vessel_type) == "cargo" & variable == "unique_count_mmsi",
+                      .(cargo_uniq_mmsi_count = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Remove bad data introduced by source
+cargo.ais.ptr <- cargo.ais.ptr[!is.na(date)]
+
+
+
+cargo.ais <- merge.data.table(cargo.ais.ptr, 
+                              cargo.ais.tim, 
+                              by = c("date", "region", "country"),
+                              all = TRUE)
+
+
+rm(cargo.ais.ptr, cargo.ais.tim)
+```
+
+Fishing Time in Port and Unique Count aggregation. 
+
+```{r}
+# Cargo indicators
+fish.ais.tim <- ais.data[tolower(vessel_type) == "fishing" & variable == "time_in_port_seconds",
+                      .(fishing_time_in_port_seconds = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Cargo indicators
+fish.ais.ptr <- ais.data[tolower(vessel_type) == "fishing" & variable == "unique_count_mmsi",
+                      .(fishing_uniq_mmsi_count = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Remove bad data introduced by source
+fish.ais.ptr <- fish.ais.ptr[!is.na(date)]
+
+
+
+fish.ais <- merge.data.table(fish.ais.ptr, 
+                              fish.ais.tim, 
+                              by = c("date", "region", "country"),
+                              all = TRUE)
+
+
+rm(fish.ais.ptr, fish.ais.tim)
+```
+
+Tanker Time in Port and Unique Count aggregation. 
+
+```{r}
+# Cargo indicators
+tnkr.ais.tim <- ais.data[tolower(vessel_type) == "tanker" & variable == "time_in_port_seconds",
+                      .(tanker_time_in_port_seconds = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Cargo indicators
+tnkr.ais.ptr <- ais.data[tolower(vessel_type) == "tanker" & variable == "unique_count_mmsi",
+                      .(tanker_uniq_mmsi_count = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Remove bad data introduced by source
+tnkr.ais.ptr <- tnkr.ais.ptr[!is.na(date)]
+
+
+
+tnkr.ais <- merge.data.table(tnkr.ais.ptr, 
+                              tnkr.ais.tim, 
+                              by = c("date", "region", "country"),
+                              all = TRUE)
+
+
+rm(tnkr.ais.ptr, tnkr.ais.tim)
+```
+
+Sailing and Pleasure Craft Time in Port and Unique Count aggregation. Both categories will be combined as leisure. 
+
+```{r}
+# Cargo indicators
+leisure.ais.tim <- ais.data[tolower(vessel_type) %in% c("sailing", "pleasure craft") & variable == "time_in_port_seconds",
+                      .(leisure_time_in_port_seconds = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Cargo indicators
+leisure.ais.ptr <- ais.data[tolower(vessel_type) %in% c("sailing", "pleasure craft") & variable == "unique_count_mmsi",
+                      .(leisure_uniq_mmsi_count = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Remove bad data introduced by source
+leisure.ais.ptr <- leisure.ais.ptr[!is.na(date)]
+
+
+
+leisure.ais <- merge.data.table(leisure.ais.ptr, 
+                              leisure.ais.tim, 
+                              by = c("date", "region", "country"),
+                              all = TRUE)
+
+
+rm(leisure.ais.ptr, leisure.ais.tim)
+```
+
+Join all into one dataset. 
+
+```{r}
+# Join
+stg.ais.agg <- merge.data.table(cargo.ais, 
+                                tnkr.ais, 
+                                by = c("date", "region", "country"),
+                                all = TRUE)
+
+
+stg.ais.agg <- merge.data.table(stg.ais.agg, 
+                                fish.ais, 
+                                by = c("date", "region", "country"),
+                                all = TRUE)
+
+
+stg.ais.agg <- merge.data.table(stg.ais.agg, 
+                                leisure.ais, 
+                                by = c("date", "region", "country"),
+                                all = TRUE)
+
+```
+
+Write to db. 
+
+```{r}
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Append stg.ais.agg to country_metrics
+RPostgres::dbWriteTable(db.con,
+                        "stg_ais_agg",
+                        stg.ais.agg,
+                        overwrite = TRUE,
+                        row.names = FALSE)
+
+
+# Count rows after upload
+chk.load <- RPostgres::dbGetQuery(db.con, "SELECT * FROM stg_ais_agg")
+
+
+
+dbDisconnect(db.con)
+
+```
 
