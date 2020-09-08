@@ -1436,6 +1436,13 @@ db.con <- dbConnect(RPostgres::Postgres(),
 # Count rows before upload
 country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM country_metrics"))
 
+stg_trade_agg <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM stg_trade_agg"))
+
+dbListTables(db.con)
+
+View(country_metrics[country == "ck" & category == "tourism", 
+                     .(s)])
+
 
 # Preview
 tail(country_metrics)
