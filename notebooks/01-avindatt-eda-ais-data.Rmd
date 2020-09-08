@@ -3302,6 +3302,9 @@ model.data.fj <- model.data[date >= "2019-01-01",
                            lag1_fish_ptr = shift(fishing_uniq_mmsi_count),
                            lag2_fish_ptr = shift(fishing_uniq_mmsi_count, n = 2),
                            lag3_fish_ptr = shift(fishing_uniq_mmsi_count, n = 3),
+                           lag1_fish_tip = shift(fishing_time_in_port_seconds),
+                           lag2_fish_tip = shift(fishing_time_in_port_seconds, n = 2),
+                           lag3_fish_tip = shift(fishing_time_in_port_seconds, n = 3),
                            lag1_lei_tip = shift(leisure_time_in_port_seconds),
                            lag2_lei_tip = shift(leisure_time_in_port_seconds, n = 2),
                            lag3_lei_tip = shift(leisure_time_in_port_seconds, n = 3),
@@ -3410,3 +3413,62 @@ accuracy(model.data.fj4)
 checkresiduals(model.data.fj4)
 ```
 
+
+Model 5 : lag3_cargo_tip + lag3_lei_tip + lag3_fish_tip
+
+```{r}
+model.data.fj5 <- tslm(trade_volume ~ lag3_cargo_tip + lag3_lei_tip + lag3_fish_tip, data = model.data.fj1.tr)
+
+
+summary(model.data.fj5)
+```
+
+
+```{r}
+accuracy(model.data.fj5)
+```
+
+
+```{r}
+checkresiduals(model.data.fj5)
+```
+
+
+Model 6 : lag3_cargo_tip + lag3_lei_tip
+
+```{r}
+model.data.fj6 <- tslm(trade_volume ~ lag3_cargo_tip + lag3_lei_tip, data = model.data.fj1.tr)
+
+
+summary(model.data.fj6)
+```
+
+
+```{r}
+accuracy(model.data.fj6)
+```
+
+
+```{r}
+checkresiduals(model.data.fj6)
+```
+
+
+Model 7 : lag3_lei_tip
+
+```{r}
+model.data.fj7 <- tslm(trade_volume ~ lag3_lei_tip, data = model.data.fj1.tr)
+
+
+summary(model.data.fj7)
+```
+
+
+```{r}
+accuracy(model.data.fj7)
+```
+
+
+```{r}
+checkresiduals(model.data.fj7)
+```
