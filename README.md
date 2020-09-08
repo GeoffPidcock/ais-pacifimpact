@@ -9,7 +9,7 @@ Competition Submission:
 
 [Check out our Data Studio Dashboard](https://datastudio.google.com/u/0/reporting/2f059d44-9eca-4e95-8237-62c38c2f8c0f/page/EnveB), <br>
 and watch our **[Video](https://youtu.be/vt5fpE0bzSY)**:
-[![Watch the video](https://i.imgur.com/vKb2F1B.png)](https://youtu.be/vt5fpE0bzSY)
+[![Watch the video](./references/Video.png)](https://drive.google.com/file/d/1IVm_DjHVuQck7HaY3Zm4HmpwV-_xv4jI/view)
 
 Authors:
 ------------
