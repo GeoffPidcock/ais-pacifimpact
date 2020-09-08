@@ -607,7 +607,8 @@ From UNSTATS:
 Frequency of calculation: Monthly
 
 1.  Calculate time difference between sorted time messages for each MMSI
-    saved as time deltas.
+    saved as time deltas. If time deltas are \> 10800 (3 hours) then 0
+    the value.
 2.  Generate Port Index (arbitrary because selection is only for port
     bounds) + Time Period (Month) + Year
 
@@ -620,6 +621,28 @@ cklist.list <- cklist.list[order(cklist.list$dtg),
             `:=` (time_diff_seconds = dtg - shift(dtg)),
             by = mmsi][order(cklist.list$dtg,
                              cklist.list$mmsi)]
+
+
+# # Test calc
+# tt <- cklist.list[vessel_name == "GRINNA2", 
+#                   .(dtg, 
+#                     month = lubridate::month(dtg), 
+#                     year = lubridate::year(dtg),
+#                     time_diff_seconds)]
+# 
+# tta <- tt[, 
+#           .(time_diff_seconds = sum(time_diff_seconds, na.rm = TRUE)),
+#           by = .(dtg = as.Date(dtg))]
+# 
+# 
+# ttb <- cklist.list[time_diff_seconds > 10800]
+
+
+# If time difference is greater than 10800 seconds remove
+cklist.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
 
 
 # Create index
@@ -642,7 +665,7 @@ tim.ds <- cklist.list[,
                         vessel_class)][time_in_port_seconds != 0]
 
 
-# z <- tim.ds[,
+# z <- tim.ds[vessel_type %in% c("Cargo"),
 #        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
 #        by = .(year,
 #               month)]
@@ -656,7 +679,7 @@ tim.ds <- cklist.list[,
 #                                                             "imports-cif",
 #                                                             "trade-balance"))
 
-
+# Time in port dataset
 tim.ds <- melt.data.table(tim.ds, 
                           id = c("index",
                                 "month",
@@ -701,7 +724,7 @@ ptr.ds <- cklist.list[,
                         vessel_class)]
 
 
-# z <- ptr.ds[,
+# z <- ptr.ds[vessel_type %in% c("Cargo"),
 #        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
 #        by = .(year,
 #               month)]
@@ -895,6 +918,12 @@ suva.list <- suva.list[order(suva.list$dtg),
             `:=` (time_diff_seconds = dtg - shift(dtg)),
             by = mmsi][order(suva.list$dtg,
                              suva.list$mmsi)]
+
+
+# If time difference is greater than 10800 seconds remove
+suva.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
 
 
 # Create index
@@ -1175,9 +1204,15 @@ lautoka.list <- lautoka.list[order(lautoka.list$dtg),
                              lautoka.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+lautoka.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 lautoka.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("fj-ltka-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1237,7 +1272,7 @@ Frequency of calculation: Monthly
 ``` r
 # Create index
 lautoka.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("fj-ltka-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1450,9 +1485,15 @@ noro.list <- noro.list[order(noro.list$dtg),
                              noro.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+noro.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 noro.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("sl-noro-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1512,7 +1553,7 @@ Frequency of calculation: Monthly
 ``` r
 # Create index
 noro.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("sl-noro-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1725,9 +1766,15 @@ port.v.list <- port.v.list[order(port.v.list$dtg),
                              port.v.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+port.v.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 port.v.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("vn-ptvl-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -1787,7 +1834,7 @@ Frequency of calculation: Monthly
 ``` r
 # Create index
 port.v.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("vn-ptvl-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -2000,9 +2047,15 @@ lugv.list <- lugv.list[order(lugv.list$dtg),
                              lugv.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+lugv.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 lugv.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("vn-lgvl-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -2062,7 +2115,7 @@ Frequency of calculation: Monthly
 ``` r
 # Create index
 lugv.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("vn-lgvl-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -2275,9 +2328,15 @@ honiora.list <- honiora.list[order(honiora.list$dtg),
                              honiora.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+honiora.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 honiora.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("sl-honi-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -2337,7 +2396,7 @@ Frequency of calculation: Monthly
 ``` r
 # Create index
 honiora.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("sl-honi-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -2401,15 +2460,6 @@ betio.v.list <- rbindlist(betio.v.list)
 
 
 betio.v.list <- betio.v.list[,1:28]
-
-
-# Remove bad values that cause the write to db to fail
-betio.v.list <- betio.v.list[!vessel_type_code %in% c("General Cargo Ship", "S-AIS", "TARAWA")]
-
-
-# Change vessel_type_code to num type 
-betio.v.list[,
-             vessel_type_code := as.numeric(vessel_type_code)]
 
 
 head(betio.v.list)
@@ -2562,9 +2612,15 @@ betio.v.list <- betio.v.list[order(betio.v.list$dtg),
                              betio.v.list$mmsi)]
 
 
+# If time difference is greater than 10800 seconds remove
+betio.v.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
 # Create index
 betio.v.list[,
-            index := paste0("fj-suva-tip-",
+            index := paste0("ki-beti-tip-",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -2624,7 +2680,7 @@ Frequency of calculation: Monthly
 ``` r
 # Create index
 betio.v.list[,
-            index := paste0("fj-suva-ptr",
+            index := paste0("ki-beti-ptr",
                                 "-",
                                 month = lubridate::month(dtg), 
                                 "-",
@@ -2666,3 +2722,880 @@ ki_betio_ais <- rbind(tim.ds, ptr.ds)
 
 fwrite(ki_betio_ais, "./data/processed/ki_betio_ais.csv")
 ```
+
+# Read Palau
+
+Read the files extracted from UNGP for Betio, Kiribati.
+
+``` r
+# pl.list files
+file.list <- list.files(path = "./data/external/ais_pl/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+pl.list <- lapply(paste0("./data/external/ais_pl/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+pl.list <- rbindlist(pl.list)
+
+
+pl.list <- pl.list[,1:28]
+
+
+head(pl.list)
+```
+
+## Exploration
+
+1.  Convert dtg and eta to as.POSIXct(x, tz = "", …)
+
+<!-- end list -->
+
+``` r
+# Change from char to posixct 
+pl.list[,
+            `:=` (dtg = gsub("T",
+                             " ",
+                             dtg
+                             )
+                  )][,
+                     `:=` (dtg = gsub(".000Z",
+                             "",
+                             dtg
+                             )
+                           )]
+
+
+pl.list[,
+            `:=` (dtg = strptime(dtg, "%Y-%m-%d %H:%M:%S")
+                  )]
+
+
+# check summary 
+pl.list[,
+            summary(dtg)]
+```
+
+``` r
+# Check out dataset quality
+ExpData(
+  data = pl.list,
+  type = 1
+  )
+```
+
+``` r
+# Check out data feature quality
+ExpData(
+  data = pl.list,
+  type = 2
+  )
+```
+
+``` r
+# Statistics for Numerical features 
+data.table(
+  ExpNumStat(
+    pl.list,
+    by = "A",
+    gp = NULL,
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)
+```
+
+``` r
+# Statistics for Numerical features by Vessel Type
+data.table(
+  ExpNumStat(
+    pl.list,
+    by = "GA",
+    gp = "vessel_type",
+    Qnt = NULL,
+    Nlim = 10,
+    MesofShape = 2,
+    Outlier = TRUE,
+    round = 3,
+    dcast = FALSE,
+    val = NULL
+  )
+)[order(-TN),
+  head(.SD,
+       10),
+  by = Vname]
+```
+
+``` r
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    pl.list,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+```
+
+## Noise Reduction
+
+Numerous methods are outlined to reduce noise. Replicate the procedures
+outlined by
+[UNSTATS](https://unstats.un.org/wiki/display/AIS/AIS+data+at+the+UN+Global+Platform).
+
+### “Moving Ships” filter Algorithm
+
+From UNSTATS:
+
+> The distance travelled is calculated in the “Calculate the mount of
+> motion” block by computing the minimum and maximum of latitude and
+> longitudes for all ship positions over the selected period. The
+> differences in latitude and longitude, the deltas, are compared
+> against a predefined threshold values.
+
+### “Time in Port” Indicator
+
+From UNSTATS:
+
+> The “Time in Port” indicator measures the total time spent by all
+> ships within the boundaries of the port monthly over the defined
+> period.
+
+Frequency of calculation: Monthly
+
+1.  Calculate time difference between sorted time messages for each MMSI
+    saved as time deltas.
+2.  Generate Port Index (arbitrary because selection is only for port
+    bounds) + Time Period (Month) + Year
+
+<!-- end list -->
+
+``` r
+# Calculate time difference 
+# Sort by mmsi and dth 
+pl.list <- pl.list[order(pl.list$dtg),
+            `:=` (time_diff_seconds = dtg - shift(dtg)),
+            by = mmsi][order(pl.list$dtg,
+                             pl.list$mmsi)]
+
+
+# If time difference is greater than 10800 seconds remove
+pl.list[time_diff_seconds >= 10800, 
+            time_diff_seconds := 0,
+            by = mmsi]
+
+
+# Create index
+pl.list[,
+            index := paste0("pl-tip-",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+tim.ds <- pl.list[,
+                 .(time_in_port_seconds = sum(time_diff_seconds,
+                                              na.rm = TRUE)),
+                 by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)][time_in_port_seconds != 0]
+
+
+# z <- tim.ds[,
+#        .(sum_time_mins = sum(time_in_port_seconds, na.rm = TRUE)/60),
+#        by = .(year,
+#               month)]
+
+
+# melt.data.table(ki.imts.bot,
+#                                id = c("year",
+#                                       "month"), measure = c("exports-fob-domestic",
+#                                                             "exports-fob-reexport", 
+#                                                             "exports-fob-total",
+#                                                             "imports-cif",
+#                                                             "trade-balance"))
+
+
+tim.ds <- melt.data.table(tim.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "time_in_port_seconds")
+```
+
+### “Port Traffic” Indicator
+
+From UNSTATS:
+
+> The “Port Traffic” indicator captures how many unique ships have been
+> observed in port based on their reported MMSI.
+
+Frequency of calculation: Monthly
+
+1.  Create time period index using mmsi + port + time period (month)
+2.  Count Unique
+
+<!-- end list -->
+
+``` r
+# Create index
+pl.list[,
+            index := paste0("pl-ptr",
+                                "-",
+                                month = lubridate::month(dtg), 
+                                "-",
+                                year = lubridate::year(dtg))]
+
+
+ptr.ds <- pl.list[, 
+                  .(unique_count_mmsi = .N), 
+                  by = .(index,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg),
+                        vessel_type,
+                        flag_country,
+                        vessel_class)]
+
+
+# z <- ptr.ds[,
+#        .(sum  = sum(unique_count_mmsi, na.rm = TRUE)),
+#        by = .(year,
+#               month)]
+
+
+ptr.ds <- melt.data.table(ptr.ds, 
+                          id = c("index",
+                                "month",
+                                 "year",
+                                 "vessel_type",
+                                 "flag_country",
+                                 "vessel_class"),
+                          measure = "unique_count_mmsi")
+
+
+
+tim.ds[, value := as.integer(value)]
+
+
+pl_ais <- rbind(tim.ds, ptr.ds)
+
+
+fwrite(pl_ais, "./data/processed/pl_ais.csv")
+```
+
+# Common AIS Data Schema
+
+Read in all aggregated AIS data.
+
+``` r
+# list files
+file.list <- list.files(path = "./data/processed/", 
+                        pattern='*.csv')
+
+
+# Read files in bulk
+ais.data <- lapply(paste0("./data/processed/",
+                           file.list),
+                  fread)
+
+
+# turn into one table 
+ais.data <- rbindlist(ais.data)
+
+
+# Create country field 
+ais.data[, 
+         country := substr(index, 1, 2)]
+
+
+
+head(ais.data)
+```
+
+Get stg\_trade\_agg as example.
+
+``` r
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+stg_trade_agg <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM stg_trade_agg"))
+
+
+# Preview
+tail(stg_trade_agg)
+```
+
+Align Data to similar schema as stg\_trade\_agg.
+
+``` r
+# Align country labels, rename sl to sb for solomon islands 
+ais.data[country == "sl", 
+         country := "sb"]
+
+
+# pl to pw for palau 
+ais.data[country == "pl", 
+         country := "pw"]
+
+
+# Create region field 
+ais.data[country %in% c("fj", "vn", "sb"), 
+         region := "melanesia"]
+
+
+ais.data[country %in% c('ck','ki'), 
+         region := "polynesia"]
+
+
+ais.data[country %in% c('pw','pl'), 
+         region := "micronesia"]
+```
+
+Aggregate data, the reliance here is on the quality of the vessel type
+data feature. There are bad records and empty records (refer to the
+statistics below). No alternate sources to impute so these we’ll be
+ignored in the initial study, with a look to further improve data
+quality in subsequent studies for the use of AIS data.
+
+Aggregating by vessel\_type, 80.75% of the available data set will be
+used (ignoring bad data)
+
+``` r
+# Check out dataset quality
+ExpData(
+  data = ais.data,
+  type = 1
+  )
+```
+
+``` r
+# expo <- data.table(
+#   ExpCTable(
+#     country_metrics,
+#     Target = NULL,
+#     margin = 1,
+#     clim = 50,
+#     nlim = 10,
+#     round = 2,
+#     bin = 3,
+#     per = TRUE
+#   )
+# )[order(-Frequency),
+#   head(.SD,
+#        300),
+#   by = Variable]
+# 
+# fwrite(expo, "./data/processed/ds_quality_stats/country_metrics_stats.csv")
+
+
+# Check out data feature quality
+ExpData(
+  data = ais.data,
+  type = 2
+  )
+```
+
+``` r
+# Statistics for Categorigal features
+data.table(
+  ExpCTable(
+    ais.data,
+    Target = NULL,
+    margin = 1,
+    clim = 50,
+    nlim = 10,
+    round = 2,
+    bin = 3,
+    per = TRUE
+  )
+)[order(-Frequency),
+  head(.SD,
+       10),
+  by = Variable]
+```
+
+Cargo Time in Port and Unique Count aggregation.
+
+``` r
+# Create date field 
+ais.data[, 
+         date := as.Date(paste0(year,"-",month,"-01"))]
+
+
+# Cargo indicators
+cargo.ais.tim <- ais.data[tolower(vessel_type) == "cargo" & variable == "time_in_port_seconds",
+                      .(cargo_time_in_port_seconds = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Cargo indicators
+cargo.ais.ptr <- ais.data[tolower(vessel_type) == "cargo" & variable == "unique_count_mmsi",
+                      .(cargo_uniq_mmsi_count = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Remove bad data introduced by source
+cargo.ais.ptr <- cargo.ais.ptr[!is.na(date)]
+
+
+
+cargo.ais <- merge.data.table(cargo.ais.ptr, 
+                              cargo.ais.tim, 
+                              by = c("date", "region", "country"),
+                              all = TRUE)
+
+
+rm(cargo.ais.ptr, cargo.ais.tim)
+```
+
+Fishing Time in Port and Unique Count aggregation.
+
+``` r
+# Cargo indicators
+fish.ais.tim <- ais.data[tolower(vessel_type) == "fishing" & variable == "time_in_port_seconds",
+                      .(fishing_time_in_port_seconds = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Cargo indicators
+fish.ais.ptr <- ais.data[tolower(vessel_type) == "fishing" & variable == "unique_count_mmsi",
+                      .(fishing_uniq_mmsi_count = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Remove bad data introduced by source
+fish.ais.ptr <- fish.ais.ptr[!is.na(date)]
+
+
+
+fish.ais <- merge.data.table(fish.ais.ptr, 
+                              fish.ais.tim, 
+                              by = c("date", "region", "country"),
+                              all = TRUE)
+
+
+rm(fish.ais.ptr, fish.ais.tim)
+```
+
+Tanker Time in Port and Unique Count aggregation.
+
+``` r
+# Cargo indicators
+tnkr.ais.tim <- ais.data[tolower(vessel_type) == "tanker" & variable == "time_in_port_seconds",
+                      .(tanker_time_in_port_seconds = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Cargo indicators
+tnkr.ais.ptr <- ais.data[tolower(vessel_type) == "tanker" & variable == "unique_count_mmsi",
+                      .(tanker_uniq_mmsi_count = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Remove bad data introduced by source
+tnkr.ais.ptr <- tnkr.ais.ptr[!is.na(date)]
+
+
+
+tnkr.ais <- merge.data.table(tnkr.ais.ptr, 
+                              tnkr.ais.tim, 
+                              by = c("date", "region", "country"),
+                              all = TRUE)
+
+
+rm(tnkr.ais.ptr, tnkr.ais.tim)
+```
+
+Sailing and Pleasure Craft Time in Port and Unique Count aggregation.
+Both categories will be combined as leisure.
+
+``` r
+# Cargo indicators
+leisure.ais.tim <- ais.data[tolower(vessel_type) %in% c("sailing", "pleasure craft") & variable == "time_in_port_seconds",
+                      .(leisure_time_in_port_seconds = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Cargo indicators
+leisure.ais.ptr <- ais.data[tolower(vessel_type) %in% c("sailing", "pleasure craft") & variable == "unique_count_mmsi",
+                      .(leisure_uniq_mmsi_count = sum(value , na.rm = TRUE)), 
+                      by = .(date,
+                             region, 
+                             country)]
+
+
+# Remove bad data introduced by source
+leisure.ais.ptr <- leisure.ais.ptr[!is.na(date)]
+
+
+
+leisure.ais <- merge.data.table(leisure.ais.ptr, 
+                              leisure.ais.tim, 
+                              by = c("date", "region", "country"),
+                              all = TRUE)
+
+
+rm(leisure.ais.ptr, leisure.ais.tim)
+```
+
+Join all into one dataset.
+
+``` r
+# Join
+stg.ais.agg <- merge.data.table(cargo.ais, 
+                                tnkr.ais, 
+                                by = c("date", "region", "country"),
+                                all = TRUE)
+
+
+stg.ais.agg <- merge.data.table(stg.ais.agg, 
+                                fish.ais, 
+                                by = c("date", "region", "country"),
+                                all = TRUE)
+
+
+stg.ais.agg <- merge.data.table(stg.ais.agg, 
+                                leisure.ais, 
+                                by = c("date", "region", "country"),
+                                all = TRUE)
+```
+
+Write to db.
+
+``` r
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# # Append stg.ais.agg to stg_ais_agg
+# RPostgres::dbWriteTable(db.con,
+#                         "stg_ais_agg",
+#                         stg.ais.agg,
+#                         overwrite = TRUE,
+#                         row.names = FALSE)
+
+
+# Count rows after upload
+chk.load <- RPostgres::dbGetQuery(db.con, "SELECT * FROM stg_ais_agg")
+
+
+
+dbDisconnect(db.con)
+```
+
+# Tourism Data Schema
+
+Aggregate into the common schema.
+
+``` r
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM country_metrics"))
+
+
+tourism.data <- country_metrics[tolower(category) == "tourism" & frequency == "monthly"]
+
+
+# Align country labels, rename ki and kir
+tourism.data[country == "kir", 
+         country := "ki"]
+
+
+# pl to pw for palau 
+tourism.data[country %in% c("pl", "PW"), 
+         country := "pw"]
+
+
+# Create region field 
+tourism.data[country %in% c("fj", "vn", "sb"), 
+         region := "melanesia"]
+
+
+tourism.data[country %in% c('ck','ki'), 
+         region := "polynesia"]
+
+
+tourism.data[country %in% c('pw','pl'), 
+         region := "micronesia"]
+```
+
+Align variable names across countries before aggregating.
+
+``` r
+# align total-visitors for palau and vanuatu to arrivals-visitor 
+tourism.data[name == "total-visitors", 
+             name := "arrivals-visitor"]
+
+
+# tourism indicators
+tourism.data <- tourism.data[tolower(name) == "arrivals-visitor",
+                      .(visitor_arrivals = value), 
+                      by = .(date,
+                             region, 
+                             country)]
+```
+
+Write to db.
+
+``` r
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Append stg.ais.agg to stg_ais_agg
+RPostgres::dbWriteTable(db.con,
+                        "stg_tourism_agg",
+                        tourism.data,
+                        overwrite = TRUE,
+                        row.names = FALSE)
+
+
+# Count rows after upload
+chk.load <- RPostgres::dbGetQuery(db.con, "SELECT * FROM stg_tourism_agg")
+
+
+
+dbDisconnect(db.con)
+```
+
+# All Required Data Combined
+
+Merge.
+
+``` r
+stg_trade_agg[, 
+              date := as.Date(date)]
+
+all.together <- merge.data.table(stg_trade_agg, 
+                                 stg.ais.agg,
+                                 by = c("date", "region", "country"),
+                                 all = TRUE)
+
+tourism.data[, 
+             date := as.Date(date)]
+
+
+all.together <- merge.data.table(all.together,
+                                 tourism.data, 
+                                 by = c("date", "region", "country"),
+                                 all = TRUE)
+
+
+# Center to mean
+all.together[,
+             s_trade_volume := trade_volume/mean(trade_volume, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_cargo_uniq_mmsi_count := cargo_uniq_mmsi_count/mean(cargo_uniq_mmsi_count, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_cargo_time_in_port_seconds := cargo_time_in_port_seconds/mean(cargo_time_in_port_seconds, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_tanker_uniq_mmsi_count := tanker_uniq_mmsi_count/mean(tanker_uniq_mmsi_count, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_tanker_time_in_port_seconds := tanker_time_in_port_seconds/mean(tanker_time_in_port_seconds, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_fishing_uniq_mmsi_count := fishing_uniq_mmsi_count/mean(fishing_uniq_mmsi_count, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_fishing_time_in_port_seconds := fishing_time_in_port_seconds/mean(fishing_time_in_port_seconds, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_leisure_uniq_mmsi_count := leisure_uniq_mmsi_count/mean(leisure_uniq_mmsi_count, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_leisure_time_in_port_seconds := leisure_time_in_port_seconds/mean(leisure_time_in_port_seconds, na.rm = TRUE), 
+             by = country]
+
+
+all.together[,
+             s_visitor_arrivals := as.numeric(visitor_arrivals)/mean(as.numeric(visitor_arrivals), na.rm = TRUE), 
+             by = country]
+
+# export
+fwrite(all.together,"./data/processed/pacifimpact-project-data.csv")
+```
+
+Time Series Forecasting
+
+Fiji - Multiple Regression
+
+``` r
+# Read in Data 
+model.data <- fread("./data/processed/pacifimpact-project-data.csv")
+
+
+# Keep only Jan 2019 onwards 
+model.data[,
+           date := as.Date(date)]
+
+
+model.data <- model.data[date >= "2019-01-01"]
+
+
+model.data <- model.data[country == "fj"]
+
+
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM country_metrics"))
+
+
+model.cpi <- country_metrics[country == "fj" & tolower(category) == "cpi"] 
+
+
+model.cpi <- model.cpi[,
+                       .(cpi_total = sum(as.numeric(value), na.rm = TRUE)), 
+                       by = .(date = as.Date(paste0(date,"-01")),
+                              country)]
+
+
+model.data <- merge.data.table(model.data, 
+                               model.cpi, 
+                               by = c("date", "country"),
+                               all = TRUE)[date >= "2019-01-01"]
+
+# s_cpi_total
+model.data[,
+           s_cpi_total := cpi_total/mean(cpi_total, na.rm = TRUE)]
+```
+
+Select Data: Predict CPI here.
+
+``` r
+model.data1 <- model.data[date >= "2019-09-01",
+                         .(date, 
+                           cargo_time_in_port_seconds,
+                           cargo_uniq_mmsi_count,
+                           tanker_uniq_mmsi_count, 
+                           tanker_time_in_port_seconds, 
+                           cpi_total)]
+
+
+model1.tr <- model.data1[1:10]
+
+
+model1.ts <- model.data1[11:13]
+
+
+cpi.model1 <- model1.tr[,lm(cpi_total ~ cargo_time_in_port_seconds + tanker_time_in_port_seconds)]
+
+
+summary(cpi.model1)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = cpi_total ~ cargo_time_in_port_seconds + tanker_time_in_port_seconds)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -10.482  -2.356   1.496   2.840   6.790 
+    ## 
+    ## Coefficients:
+    ##                               Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)                  1.582e+03  7.257e+00 217.950 1.13e-14 ***
+    ## cargo_time_in_port_seconds  -4.146e-07  6.698e-07  -0.619    0.555    
+    ## tanker_time_in_port_seconds  3.171e-06  4.601e-06   0.689    0.513    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 5.54 on 7 degrees of freedom
+    ## Multiple R-squared:  0.08908,    Adjusted R-squared:  -0.1712 
+    ## F-statistic: 0.3423 on 2 and 7 DF,  p-value: 0.7214
+
+``` r
+predict(cpi.model1, model1.ts)
+```
+
+    ##        1        2        3 
+    ## 1581.992 1579.301 1582.078

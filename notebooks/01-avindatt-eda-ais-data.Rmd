@@ -2728,7 +2728,7 @@ head(ais.data)
 
 Get stg_trade_agg as example. 
 
-```{r}
+```{r eval = FALSE}
 # Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
@@ -2748,7 +2748,7 @@ tail(stg_trade_agg)
 
 Align Data to similar schema as stg_trade_agg. 
 
-```{r}
+```{r eval = FALSE}
 # Align country labels, rename sl to sb for solomon islands 
 ais.data[country == "sl", 
          country := "sb"]
@@ -2777,7 +2777,7 @@ Aggregate data, the reliance here is on the quality of the vessel type data feat
 
 Aggregating by vessel_type, 80.75% of the available data set will be used (ignoring bad data)
 
-```{r}
+```{r eval = FALSE}
 
 # Check out dataset quality
 ExpData(
@@ -2788,7 +2788,7 @@ ExpData(
 
 
 
-```{r}
+```{r eval = FALSE}
 # expo <- data.table(
 #   ExpCTable(
 #     country_metrics,
@@ -2817,7 +2817,7 @@ ExpData(
 ```
 
 
-```{r}
+```{r eval = FALSE}
 # Statistics for Categorigal features
 data.table(
   ExpCTable(
@@ -2839,7 +2839,7 @@ data.table(
 
 Cargo Time in Port and Unique Count aggregation. 
 
-```{r}
+```{r eval = FALSE}
 # Create date field 
 ais.data[, 
          date := as.Date(paste0(year,"-",month,"-01"))]
@@ -2877,7 +2877,7 @@ rm(cargo.ais.ptr, cargo.ais.tim)
 
 Fishing Time in Port and Unique Count aggregation. 
 
-```{r}
+```{r eval = FALSE}
 # Cargo indicators
 fish.ais.tim <- ais.data[tolower(vessel_type) == "fishing" & variable == "time_in_port_seconds",
                       .(fishing_time_in_port_seconds = sum(value , na.rm = TRUE)), 
@@ -2910,7 +2910,7 @@ rm(fish.ais.ptr, fish.ais.tim)
 
 Tanker Time in Port and Unique Count aggregation. 
 
-```{r}
+```{r eval = FALSE}
 # Cargo indicators
 tnkr.ais.tim <- ais.data[tolower(vessel_type) == "tanker" & variable == "time_in_port_seconds",
                       .(tanker_time_in_port_seconds = sum(value , na.rm = TRUE)), 
@@ -2943,7 +2943,7 @@ rm(tnkr.ais.ptr, tnkr.ais.tim)
 
 Sailing and Pleasure Craft Time in Port and Unique Count aggregation. Both categories will be combined as leisure. 
 
-```{r}
+```{r eval = FALSE}
 # Cargo indicators
 leisure.ais.tim <- ais.data[tolower(vessel_type) %in% c("sailing", "pleasure craft") & variable == "time_in_port_seconds",
                       .(leisure_time_in_port_seconds = sum(value , na.rm = TRUE)), 
@@ -2976,7 +2976,7 @@ rm(leisure.ais.ptr, leisure.ais.tim)
 
 Join all into one dataset. 
 
-```{r}
+```{r eval = FALSE}
 # Join
 stg.ais.agg <- merge.data.table(cargo.ais, 
                                 tnkr.ais, 
@@ -2999,7 +2999,7 @@ stg.ais.agg <- merge.data.table(stg.ais.agg,
 
 Write to db. 
 
-```{r}
+```{r eval = FALSE}
 # Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
@@ -3030,7 +3030,7 @@ dbDisconnect(db.con)
 
 Aggregate into the common schema.
 
-```{r}
+```{r eval = FALSE}
 # Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
@@ -3073,7 +3073,7 @@ tourism.data[country %in% c('pw','pl'),
 
 Align variable names across countries before aggregating. 
 
-```{r}
+```{r eval = FALSE}
 # align total-visitors for palau and vanuatu to arrivals-visitor 
 tourism.data[name == "total-visitors", 
              name := "arrivals-visitor"]
@@ -3091,7 +3091,7 @@ tourism.data <- tourism.data[tolower(name) == "arrivals-visitor",
 
 Write to db. 
 
-```{r}
+```{r eval = FALSE}
 # Connect to a specific postgres database
 db.con <- dbConnect(RPostgres::Postgres(),
                     dbname = 'aishackathon', 
@@ -3123,7 +3123,7 @@ dbDisconnect(db.con)
 
 Merge. 
 
-```{r}
+```{r eval = FALSE}
 stg_trade_agg[, 
               date := as.Date(date)]
 
@@ -3199,38 +3199,88 @@ fwrite(all.together,"./data/processed/pacifimpact-project-data.csv")
 
 Time Series Forecasting 
 
-Load Libraries
+Fiji - Multiple Regression 
 
 ```{r}
-# Load fable library
-if (!require(fable)) {
-  install.packages("fable")
-  library(fable)
-}
+# Read in Data 
+model.data <- fread("./data/processed/pacifimpact-project-data.csv")
 
-# Load DBI library
-if (!require(tsibble)) {
-  install.packages("tsibble")
-  library(tsibble)
-}
 
-# Load tsibbledata library
-if (!require(tsibbledata)) {
-  install.packages("tsibbledata")
-  library(tsibbledata)
-}
+# Keep only Jan 2019 onwards 
+model.data[,
+           date := as.Date(date)]
 
-# Load tsibbledata library
-if (!require(tsibbledata)) {
-  install.packages("tsibbledata")
-  library(tsibbledata)
-}
 
-# Load lubridate library
-if (!require(lubridate)) {
-  install.packages("lubridate")
-  library(lubridate)
-}
+model.data <- model.data[date >= "2019-01-01"]
+
+
+model.data <- model.data[country == "fj"]
+
+
+# Connect to a specific postgres database
+db.con <- dbConnect(RPostgres::Postgres(),
+                    dbname = 'aishackathon', 
+                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+                    port = 5432, 
+                    user = Sys.getenv("userid"),
+                    password = Sys.getenv("pwd"))
+
+
+# Count rows before upload
+country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM country_metrics"))
+
+
+model.cpi <- country_metrics[country == "fj" & tolower(category) == "cpi"] 
+
+
+model.cpi <- model.cpi[,
+                       .(cpi_total = sum(as.numeric(value), na.rm = TRUE)), 
+                       by = .(date = as.Date(paste0(date,"-01")),
+                              country)]
+
+
+model.data <- merge.data.table(model.data, 
+                               model.cpi, 
+                               by = c("date", "country"),
+                               all = TRUE)[date >= "2019-01-01"]
+
+# s_cpi_total
+model.data[,
+           s_cpi_total := cpi_total/mean(cpi_total, na.rm = TRUE)]
+
 ```
+
+Select Data: Predict CPI here. 
+
+```{r}
+model.data1 <- model.data[date >= "2019-09-01",
+                         .(date, 
+                           cargo_time_in_port_seconds,
+                           cargo_uniq_mmsi_count,
+                           tanker_uniq_mmsi_count, 
+                           tanker_time_in_port_seconds, 
+                           cpi_total)]
+
+
+model1.tr <- model.data1[1:10]
+
+
+model1.ts <- model.data1[11:13]
+
+
+cpi.model1 <- model1.tr[,lm(cpi_total ~ cargo_time_in_port_seconds + tanker_time_in_port_seconds)]
+
+
+summary(cpi.model1)
+
+```
+
+
+```{r}
+predict(cpi.model1, model1.ts)
+
+
+```
+
 
 
