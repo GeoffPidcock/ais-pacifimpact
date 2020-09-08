@@ -3,7 +3,6 @@ ais-pacifimpact
 
 AIS Hackathon 2020 Submission
 
-
 [Check out our Data Studio Dashboard](https://datastudio.google.com/u/0/reporting/2f059d44-9eca-4e95-8237-62c38c2f8c0f/page/EnveB), <br>
 Or watch our **[Video](https://youtu.be/vt5fpE0bzSY)**:
 [![Watch the video](https://i.imgur.com/vKb2F1B.png)](https://youtu.be/vt5fpE0bzSY)
@@ -27,7 +26,7 @@ Project Organization
     │   ├── processed      <- The final, canonical data sets for modeling.
     │   └── raw            <- The original, immutable data dump.
     │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
+    ├── docs               <- Contains docs in markdown.
     │
     ├── models             <- Trained and serialized models, model predictions, or model summaries
     │
