@@ -301,6 +301,14 @@ cklist.list[time_diff_seconds >= 10800,
             by = mmsi]
 
 
+# ck.tim.bins <- cklist.list[, 
+#                         .(sum_tim_mth = sum(time_diff_seconds/60, na.rm = TRUE)),
+#                         by = .(mmsi,
+#                         month = lubridate::month(dtg),
+#                         year = lubridate::year(dtg))]
+
+
+
 
 # Create index
 cklist.list[,
@@ -585,6 +593,13 @@ suva.list <- suva.list[order(suva.list$dtg),
 suva.list[time_diff_seconds >= 10800, 
             time_diff_seconds := 0,
             by = mmsi]
+
+
+suva.tim.bins <- suva.list[, 
+                        .(sum_tim_mth = sum(time_diff_seconds/60, na.rm = TRUE)),
+                        by = .(mmsi,
+                        month = lubridate::month(dtg),
+                        year = lubridate::year(dtg))]
 
 
 # Create index
@@ -2138,11 +2153,12 @@ betio.v.list <- lapply(paste0("./data/external/ais_ki_betio/",
                   fread)
 
 
+# Edit out null columns in first file 
+betio.v.list[[1]] <- betio.v.list[[1]][,1:28]
+
+
 # turn into one table 
 betio.v.list <- rbindlist(betio.v.list)
-
-
-betio.v.list <- betio.v.list[,1:28]
 
 
 head(betio.v.list)
@@ -2695,7 +2711,7 @@ fwrite(pl_ais, "./data/processed/pl_ais.csv")
 
 
 
-# Common AIS Data Schema 
+# Prepare Model Data : AIS Data Schema 
 
 
 Read in all aggregated AIS data. 
@@ -3101,12 +3117,12 @@ db.con <- dbConnect(RPostgres::Postgres(),
                     password = Sys.getenv("pwd"))
 
 
-# Append stg.ais.agg to stg_ais_agg
-RPostgres::dbWriteTable(db.con,
-                        "stg_tourism_agg",
-                        tourism.data,
-                        overwrite = TRUE,
-                        row.names = FALSE)
+# # Append stg.ais.agg to stg_ais_agg
+# RPostgres::dbWriteTable(db.con,
+#                         "stg_tourism_agg",
+#                         tourism.data,
+#                         overwrite = TRUE,
+#                         row.names = FALSE)
 
 
 # Count rows after upload
@@ -3197,11 +3213,17 @@ fwrite(all.together,"./data/processed/pacifimpact-project-data.csv")
 ```
 
 
-Time Series Forecasting 
+# Time Series Forecasting 
 
-Fiji - Multiple Regression 
+Try Building Fiji Model - Multiple Regression 
 
 ```{r}
+# Load forecast library
+if (!require(forecast)) {
+  install.packages("forecast")
+  library(forecast)
+}
+
 # Read in Data 
 model.data <- fread("./data/processed/pacifimpact-project-data.csv")
 
@@ -3217,67 +3239,73 @@ model.data <- model.data[date >= "2019-01-01"]
 model.data <- model.data[country == "fj"]
 
 
-# Connect to a specific postgres database
-db.con <- dbConnect(RPostgres::Postgres(),
-                    dbname = 'aishackathon', 
-                    host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
-                    port = 5432, 
-                    user = Sys.getenv("userid"),
-                    password = Sys.getenv("pwd"))
+# # Connect to a specific postgres database
+# db.con <- dbConnect(RPostgres::Postgres(),
+#                     dbname = 'aishackathon', 
+#                     host = 'ais-hack.cirquhp75zcc.us-east-2.rds.amazonaws.com', 
+#                     port = 5432, 
+#                     user = Sys.getenv("userid"),
+#                     password = Sys.getenv("pwd"))
+# 
+# 
+# # Count rows before upload
+# country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM country_metrics"))
 
 
-# Count rows before upload
-country_metrics <- data.table(RPostgres::dbGetQuery(db.con, "SELECT * FROM country_metrics"))
+# model.cpi <- country_metrics[country == "fj" & tolower(category) == "cpi"] 
+# 
+# 
+# model.cpi <- model.cpi[,
+#                        .(cpi_total = sum(as.numeric(value), na.rm = TRUE)), 
+#                        by = .(date = as.Date(paste0(date,"-01")),
+#                               country)]
 
 
-model.cpi <- country_metrics[country == "fj" & tolower(category) == "cpi"] 
-
-
-model.cpi <- model.cpi[,
-                       .(cpi_total = sum(as.numeric(value), na.rm = TRUE)), 
-                       by = .(date = as.Date(paste0(date,"-01")),
-                              country)]
-
-
-model.data <- merge.data.table(model.data, 
-                               model.cpi, 
-                               by = c("date", "country"),
-                               all = TRUE)[date >= "2019-01-01"]
-
-# s_cpi_total
-model.data[,
-           s_cpi_total := cpi_total/mean(cpi_total, na.rm = TRUE)]
+# model.data <- merge.data.table(model.data, 
+#                                model.cpi, 
+#                                by = c("date", "country"),
+#                                all = TRUE)[date >= "2019-01-01"]
+# 
+# # s_cpi_total
+# model.data[,
+#            s_cpi_total := cpi_total/mean(cpi_total, na.rm = TRUE)]
 
 ```
 
-Select Data: Predict CPI here. 
+Select Data.
 
 ```{r}
-model.data1 <- model.data[date >= "2019-09-01",
+model.data.fj <- model.data[date >= "2019-01-01",
                          .(date, 
                            cargo_time_in_port_seconds,
                            cargo_uniq_mmsi_count,
                            tanker_uniq_mmsi_count, 
                            tanker_time_in_port_seconds, 
-                           cpi_total)]
+                           trade_volume,
+                           visitor_arrivals)]
+
+# Trin
+model.data.fj1.tr <- ts(model.data.fj[1:14], frequency = 12)
 
 
-model1.tr <- model.data1[1:10]
+# Validation
+model.data.fj.tv <- ts(model.data.fj[15:17], frequency = 12)
 
 
-model1.ts <- model.data1[11:13]
+# Test
+model.data.fj1.ts <- ts(model.data.fj[18:21], frequency = 12)
 
 
-cpi.model1 <- model1.tr[,lm(cpi_total ~ cargo_time_in_port_seconds + tanker_time_in_port_seconds)]
+model.data.fj1 <- tslm(trade_volume ~ cargo_time_in_port_seconds + visitor_arrivals + tanker_time_in_port_seconds, data = model.data.fj1.tr)
 
 
-summary(cpi.model1)
+summary(model.data.fj1)
 
 ```
 
 
 ```{r}
-predict(cpi.model1, model1.ts)
+predict(model.data.fj1, model.data.fj.tv)
 
 
 ```
