@@ -3281,11 +3281,47 @@ model.data.fj <- model.data[date >= "2019-01-01",
                            cargo_uniq_mmsi_count,
                            tanker_uniq_mmsi_count, 
                            tanker_time_in_port_seconds, 
+                           fishing_uniq_mmsi_count,
+                           fishing_time_in_port_seconds,
+                           leisure_time_in_port_seconds,
+                           leisure_uniq_mmsi_count,
                            trade_volume,
-                           visitor_arrivals)]
+                           # visitor_arrivals,
+                           lag1_cargo_tip = shift(cargo_time_in_port_seconds),
+                           lag2_cargo_tip = shift(cargo_time_in_port_seconds, n = 2),
+                           lag3_cargo_tip = shift(cargo_time_in_port_seconds, n = 3),
+                           lag1_cargo_ptr = shift(cargo_uniq_mmsi_count),
+                           lag2_cargo_ptr = shift(cargo_uniq_mmsi_count, n = 2),
+                           lag3_cargo_ptr = shift(cargo_uniq_mmsi_count, n = 3),
+                           lag1_tanker_ptr = shift(tanker_uniq_mmsi_count),
+                           lag2_tanker_ptr = shift(tanker_uniq_mmsi_count, n = 2),
+                           lag3_tanker_ptr = shift(tanker_uniq_mmsi_count, n = 3), 
+                           lag1_tanker_tip = shift(tanker_time_in_port_seconds),
+                           lag2_tanker_tip = shift(tanker_time_in_port_seconds, n = 2),
+                           lag3_tanker_tip = shift(tanker_time_in_port_seconds, n = 3), 
+                           lag1_fish_ptr = shift(fishing_uniq_mmsi_count),
+                           lag2_fish_ptr = shift(fishing_uniq_mmsi_count, n = 2),
+                           lag3_fish_ptr = shift(fishing_uniq_mmsi_count, n = 3),
+                           lag1_fish_tip = shift(fishing_time_in_port_seconds),
+                           lag2_fish_tip = shift(fishing_time_in_port_seconds, n = 2),
+                           lag3_fish_tip = shift(fishing_time_in_port_seconds, n = 3),
+                           lag1_lei_tip = shift(leisure_time_in_port_seconds),
+                           lag2_lei_tip = shift(leisure_time_in_port_seconds, n = 2),
+                           lag3_lei_tip = shift(leisure_time_in_port_seconds, n = 3),
+                           lag1_lei_ptr = shift(leisure_uniq_mmsi_count), 
+                           lag2_lei_ptr = shift(leisure_uniq_mmsi_count, n = 2),
+                           lag3_lei_ptr = shift(leisure_uniq_mmsi_count, n = 3)
+                           # lag1_trade_vol = shift(trade_volume),
+                           # lag2_trade_vol = shift(trade_volume, n = 2),
+                           # lag3_trade_vol = shift(trade_volume, n = 3),
+                           # lag1_vis_arr = shift(visitor_arrivals),
+                           # lag2_vis_arr = shift(visitor_arrivals, n = 2),
+                           # lag3_vis_arr = shift(visitor_arrivals, n = 3)
+                           )]
+
 
 # Trin
-model.data.fj1.tr <- ts(model.data.fj[1:14], frequency = 12)
+model.data.fj1.tr <- ts(model.data.fj[4:14], frequency = 12)
 
 
 # Validation
@@ -3296,19 +3332,143 @@ model.data.fj.tv <- ts(model.data.fj[15:17], frequency = 12)
 model.data.fj1.ts <- ts(model.data.fj[18:21], frequency = 12)
 
 
-model.data.fj1 <- tslm(trade_volume ~ cargo_time_in_port_seconds + visitor_arrivals + tanker_time_in_port_seconds, data = model.data.fj1.tr)
+```
+
+
+Model 1 : cargo_time_in_port_seconds + tanker_time_in_port_seconds + tanker_time_in_port_seconds
+
+```{r}
+model.data.fj1 <- tslm(trade_volume ~ cargo_time_in_port_seconds + tanker_time_in_port_seconds + tanker_time_in_port_seconds, data = model.data.fj1.tr)
 
 
 summary(model.data.fj1)
-
 ```
 
 
 ```{r}
-predict(model.data.fj1, model.data.fj.tv)
-
-
+accuracy(model.data.fj1)
 ```
 
 
+```{r}
+checkresiduals(model.data.fj1)
+```
 
+
+Model 2 : lag1_cargo_tip + lag2_cargo_tip + lag3_cargo_tip
+
+```{r}
+model.data.fj2 <- tslm(trade_volume ~ lag1_cargo_tip + lag2_cargo_tip + lag3_cargo_tip, data = model.data.fj1.tr)
+
+
+summary(model.data.fj2)
+```
+
+
+```{r}
+accuracy(model.data.fj2)
+```
+
+
+```{r}
+checkresiduals(model.data.fj2)
+```
+
+Model 3 : lag3_cargo_tip
+
+```{r}
+model.data.fj3 <- tslm(trade_volume ~ lag3_cargo_tip, data = model.data.fj1.tr)
+
+
+summary(model.data.fj3)
+```
+
+
+```{r}
+accuracy(model.data.fj3)
+```
+
+
+```{r}
+checkresiduals(model.data.fj3)
+```
+
+
+Model 4 : lag2_cargo_tip
+
+```{r}
+model.data.fj4 <- tslm(trade_volume ~ lag2_cargo_tip, data = model.data.fj1.tr)
+
+
+summary(model.data.fj4)
+```
+
+
+```{r}
+accuracy(model.data.fj4)
+```
+
+
+```{r}
+checkresiduals(model.data.fj4)
+```
+
+
+Model 5 : lag3_cargo_tip + lag3_lei_tip + lag3_fish_tip
+
+```{r}
+model.data.fj5 <- tslm(trade_volume ~ lag3_cargo_tip + lag3_lei_tip + lag3_fish_tip, data = model.data.fj1.tr)
+
+
+summary(model.data.fj5)
+```
+
+
+```{r}
+accuracy(model.data.fj5)
+```
+
+
+```{r}
+checkresiduals(model.data.fj5)
+```
+
+
+Model 6 : lag3_cargo_tip + lag3_lei_tip
+
+```{r}
+model.data.fj6 <- tslm(trade_volume ~ lag3_cargo_tip + lag3_lei_tip, data = model.data.fj1.tr)
+
+
+summary(model.data.fj6)
+```
+
+
+```{r}
+accuracy(model.data.fj6)
+```
+
+
+```{r}
+checkresiduals(model.data.fj6)
+```
+
+
+Model 7 : lag3_lei_tip
+
+```{r}
+model.data.fj7 <- tslm(trade_volume ~ lag3_lei_tip, data = model.data.fj1.tr)
+
+
+summary(model.data.fj7)
+```
+
+
+```{r}
+accuracy(model.data.fj7)
+```
+
+
+```{r}
+checkresiduals(model.data.fj7)
+```
