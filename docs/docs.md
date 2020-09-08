@@ -1,5 +1,0 @@
-# Test
-
-## Getting Started
-
-*yadda*
