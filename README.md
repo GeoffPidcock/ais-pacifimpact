@@ -15,7 +15,7 @@ Authors:
 ------------
 - [Alexandre Dayant](https://www.linkedin.com/in/alexandre-dayant-870a7a68/)
 - [Avin Datt](https://www.linkedin.com/in/avin-datt/)
-- [Ethel Karskins](https://www.linkedin.com/in/ethelkarskens/)
+- [Ethel Karskens](https://www.linkedin.com/in/ethelkarskens/)
 - [Geoffrey Pidcock](https://www.linkedin.com/in/geoffreypidcock/)
 - [Karan Dhingra](https://www.linkedin.com/in/k-dhingra/)
 
