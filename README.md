@@ -3,6 +3,10 @@ ais-pacifimpact
 
 AIS Hackathon 2020 Submission
 
+[Check out our Data Studio Dashboard (Request Access)](https://datastudio.google.com/u/0/reporting/2f059d44-9eca-4e95-8237-62c38c2f8c0f/page/EnveB), <br>
+Or watch our **Video**:
+![Watch the video](https://i.imgur.com/vKb2F1B.png)](https://youtu.be/vt5fpE0bzSY)
+
 Project Organization
 ------------
 
